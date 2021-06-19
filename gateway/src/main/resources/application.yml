@@ -1,0 +1,74 @@
+server:
+  port: 8088
+
+---
+
+spring:
+  profiles: default
+  cloud:
+    gateway:
+      routes:
+        - id: Reservation
+          uri: http://localhost:8081
+          predicates:
+            - Path=/reservationManagements/** 
+        - id: Vaccine
+          uri: http://localhost:8082
+          predicates:
+            - Path=/vaccineManagements/** 
+        - id: Hospital
+          uri: http://localhost:8083
+          predicates:
+            - Path=/hospitalManagements/** 
+        - id: CustomerCenter
+          uri: http://localhost:8084
+          predicates:
+            - Path= /reservationStatuses/**
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins:
+              - "*"
+            allowedMethods:
+              - "*"
+            allowedHeaders:
+              - "*"
+            allowCredentials: true
+
+
+---
+
+spring:
+  profiles: docker
+  cloud:
+    gateway:
+      routes:
+        - id: Reservation
+          uri: http://Reservation:8080
+          predicates:
+            - Path=/reservationManagements/** 
+        - id: Vaccine
+          uri: http://Vaccine:8080
+          predicates:
+            - Path=/vaccineManagements/** 
+        - id: Hospital
+          uri: http://Hospital:8080
+          predicates:
+            - Path=/hospitalManagements/** 
+        - id: CustomerCenter
+          uri: http://CustomerCenter:8080
+          predicates:
+            - Path= /reservationStatuses/**
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins:
+              - "*"
+            allowedMethods:
+              - "*"
+            allowedHeaders:
+              - "*"
+            allowCredentials: true
+
+server:
+  port: 8080
