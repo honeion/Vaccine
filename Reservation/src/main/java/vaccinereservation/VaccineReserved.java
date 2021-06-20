@@ -7,11 +7,11 @@ public class VaccineReserved extends AbstractEvent {
     private String userName;
     private String userPhone;
 
-    public Long getId() {
+    public Long getReservationId() {
         return reservationId;
     }
 
-    public void setId(Long reservationId) {
+    public void setReservationId(Long reservationId) {
         this.reservationId = reservationId;
     }
     public String getReservationStatus() {

@@ -1,5 +1,5 @@
 package vaccinereservation;
-
+import java.util.Date;
 public class VaccineRegistered extends AbstractEvent {
 
     private Long id;

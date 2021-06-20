@@ -1,6 +1,9 @@
 package vaccinereservation;
 
 import vaccinereservation.config.kafka.KafkaProcessor;
+
+import java.util.Optional;
+
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,10 +20,15 @@ public class PolicyHandler{
 
         if(!canceledVaccineAssigned.validate()) return;
         System.out.println("\n\n##### listener UpdateedReservationStatus : " + canceledVaccineAssigned.toJson() + "\n\n");
-        Reservation reservation = reservationRepository.findById(canceledVaccineAssigned.getReservationId());
+        Optional<Reservation> optional = reservationRepository.findById(canceledVaccineAssigned.getReservationId());
+        Reservation reservation = optional.get();
+        System.out.println("--------------------------------");
+        System.out.println("Reservation : "+reservation);
+        System.out.println("--------------------------------");
         //여기도 상태 나눠서 CANTAPPLY랑 CANCELED로 나눠서 처리
-        if(reservation.getStatus().equals("CANTAPPLY")){
+        if(canceledVaccineAssigned.getReservationStatus().equals("CANTAPPLY")){
             //신청 불가 - 이미 불가인 상태라서.
+            reservation.setStatus("CANTAPPLY");
         }
         else{
             reservation.setStatus("CANCELED");

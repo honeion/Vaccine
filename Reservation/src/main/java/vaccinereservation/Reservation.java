@@ -25,7 +25,7 @@ public class Reservation {
         VaccineReserved vaccineReserved = new VaccineReserved();
         // BeanUtils.copyProperties(this, vaccineReserved);
         setStatus("APPLYED");
-        vaccineReserved.setId(this.id);
+        vaccineReserved.setReservationId(this.id);
         vaccineReserved.setReservationStatus(this.status);
         vaccineReserved.setUserName(this.userName);
         vaccineReserved.setUserPhone(this.userPhone);
@@ -34,9 +34,9 @@ public class Reservation {
 
     @PostUpdate
     public void onPostUpdate(){
-        if(this.getStatus.equals("CANCELED")){
+        if(this.getStatus().equals("CANCELED")){
             CanceledVaccineReservation canceledVaccineReservation = new CanceledVaccineReservation();
-            canceledVaccineReservation.setId(this.id);
+            canceledVaccineReservation.setReservationId(this.id);
             canceledVaccineReservation.setReservationStatus(this.status);
             canceledVaccineReservation.publishAfterCommit();
         }
@@ -92,8 +92,10 @@ public class Reservation {
     public void setHospitalId(Long hospitalId) {
         this.hospitalId = hospitalId;
     }
-
-
-
+    @Override
+	public String toString() {
+		return "Reservation [id=" + id + ", date=" + date + ", status=" + status + ", userName=" + userName
+				+ ", userPhone=" + userPhone + ", vaccineId=" + vaccineId + ", hospitalId=" + hospitalId + "]";
+	}
 
 }

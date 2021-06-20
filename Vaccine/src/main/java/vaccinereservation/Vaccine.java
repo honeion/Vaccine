@@ -9,6 +9,8 @@ import java.util.Date;
 @Table(name="Vaccine_table")
 public class Vaccine {
 
+    @Id
+    @GeneratedValue(strategy=GenerationType.AUTO)
     private Long id;
     private String name;
     private Long type;
@@ -32,7 +34,7 @@ public class Vaccine {
             canceledVaccineAssigned.publishAfterCommit();
         }
         else{
-            if(!this.getStatus.equals("CANUSE")) setStatus("CANUSE");
+            if(!this.getStatus().equals("CANUSE")) setStatus("CANUSE");
             VaccineRegistered vaccineRegistered = new VaccineRegistered();
             vaccineRegistered.setId(this.id);
             vaccineRegistered.setVaccineName(this.name);
@@ -54,7 +56,7 @@ public class Vaccine {
         if(this.status.equals("ASSIGNED")){
             try {
                 vaccinereservation.external.Hospital hospital = new vaccinereservation.external.Hospital();
-                Application.applicationContext.getBean(vaccinereservation.external.HospitalService.class).assignHospital(hospital);
+                //Application.applicationContext.getBean(vaccinereservation.external.HospitalService.class).assignHospital(hospital);
 
             } catch (Exception e) {
                 System.out.println(e.getMessage());

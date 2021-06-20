@@ -9,11 +9,11 @@ public class CanceledVaccineAssigned extends AbstractEvent {
     private Long reservationId;
     private String reservationStatus;
 
-    public Long getId() {
+    public Long getVaccineId() {
         return vaccineId;
     }
 
-    public void setId(Long vaccineId) {
+    public void setVaccineId(Long vaccineId) {
         this.vaccineId = vaccineId;
     }
     public String getVaccineName() {

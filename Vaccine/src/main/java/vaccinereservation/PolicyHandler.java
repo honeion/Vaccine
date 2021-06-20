@@ -30,7 +30,7 @@ public class PolicyHandler{
         for(Vaccine v : list){
             if(v.getStatus().equals("CANUSE")){
                 vaccine = v;
-                vaccine.setVaccineStatus("ASSIGNED");
+                vaccine.setStatus("ASSIGNED");
                 vaccine.setReservationId(vaccineReserved.getReservationId());
                 check = true;
                 vaccineRepository.save(vaccine);
@@ -39,7 +39,8 @@ public class PolicyHandler{
         }
         if(!check){
             Vaccine cantVaccine = new Vaccine();
-            cantVaccine.setVaccineStatus("CANTUSE");
+            cantVaccine.setStatus("CANTUSE");
+            cantVaccine.setReservationId(vaccineReserved.getReservationId());
             vaccineRepository.save(cantVaccine);
             System.out.println("######################");
             System.out.println("백신부족으로 예약불가");

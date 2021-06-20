@@ -1,5 +1,5 @@
 package vaccinereservation;
-
+import java.util.Date;
 public class VaccineAssigned extends AbstractEvent {
 
     private Long vaccineId;
@@ -11,11 +11,11 @@ public class VaccineAssigned extends AbstractEvent {
     private Long reservationId;
     private String reservationStatus;
 
-    public Long getId() {
+    public Long getVaccineId() {
         return vaccineId;
     }
 
-    public void setId(Long vaccineId) {
+    public void setVaccineId(Long vaccineId) {
         this.vaccineId = vaccineId;
     }
     public String getVaccineName() {
