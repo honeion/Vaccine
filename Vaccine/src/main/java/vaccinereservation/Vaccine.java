@@ -4,6 +4,7 @@ import javax.persistence.*;
 import org.springframework.beans.BeanUtils;
 import java.util.List;
 import java.util.Date;
+import java.util.Map;
 
 @Entity
 @Table(name="Vaccine_table")
@@ -55,9 +56,16 @@ public class Vaccine {
         //백신 할당 시 Request 보내고 가서 백신있는 병원 찾고 상태값(할당가능/불가능), 수량, 체크해서 가져오고
         if(this.status.equals("ASSIGNED")){
             try {
-                vaccinereservation.external.Hospital hospital = new vaccinereservation.external.Hospital();
+                //vaccinereservation.external.Hospital hospital = new vaccinereservation.external.Hospital();
                 //Application.applicationContext.getBean(vaccinereservation.external.HospitalService.class).assignHospital(hospital);
-
+                Map<String,String> res = VaccineApplication.applicationContext
+                                                           .getBean(vaccinereservation.external.HospitalService.class)
+                                                           .assignHospital(this.getType());
+                System.out.println("#############");
+                for(String s : res.keySet()){
+                    System.out.println(res.get(s));
+                }
+                System.out.println("#############");
             } catch (Exception e) {
                 System.out.println(e.getMessage());
             }
@@ -163,7 +171,12 @@ public class Vaccine {
         this.hospitalId = hospitalId;
     }
 
-
+    @Override
+	public String toString() {
+		return "Vaccine [id=" + id + ", name=" + name + ", type=" + type + ", status=" + status + ", date=" + date
+				+ ", validationDate=" + validationDate + ", reservationId=" + reservationId + ", userName=" + userName
+				+ ", userPhone=" + userPhone + ", hospitalId=" + hospitalId + "]";
+	}
 
 
 }

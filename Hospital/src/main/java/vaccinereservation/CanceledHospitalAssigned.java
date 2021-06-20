@@ -9,11 +9,11 @@ public class CanceledHospitalAssigned extends AbstractEvent {
     private Long vaccineId;
     private Long vaccineStatus;
 
-    public Long getId() {
+    public Long getHospitalId() {
         return hospitalId;
     }
 
-    public void setId(Long hospitalId) {
+    public void setHospitalId(Long hospitalId) {
         this.hospitalId = hospitalId;
     }
     public String getHospitalName() {

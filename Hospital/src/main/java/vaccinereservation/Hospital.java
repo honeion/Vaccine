@@ -98,7 +98,12 @@ public class Hospital {
         this.vaccineCount = vaccineCount;
     }
 
-
+    @Override
+	public String toString() {
+		return "Hospital [id=" + id + ", name=" + name + ", location=" + location + ", vaccineId=" + vaccineId
+				+ ", vaccineType=" + vaccineType + ", vaccineName=" + vaccineName + ", vaccineCount=" + vaccineCount
+				+ "]";
+	}
 
 
 }
