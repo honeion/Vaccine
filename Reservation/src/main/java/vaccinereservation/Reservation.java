@@ -5,6 +5,7 @@ import org.springframework.beans.BeanUtils;
 import java.util.List;
 import java.util.Date;
 
+
 @Entity
 @Table(name="Reservation_table")
 public class Reservation {
@@ -13,7 +14,7 @@ public class Reservation {
     @GeneratedValue(strategy=GenerationType.AUTO)
     private Long id;
     private Date date;
-    private String status;
+    private String status;  //예약신청 APPLYED / 예약취소 CANCELED / 예약완료 COMPLETED / 예약불가 CANTAPPLY
     private String userName;
     private String userPhone;
     private Long vaccineId;
@@ -22,19 +23,23 @@ public class Reservation {
     @PostPersist
     public void onPostPersist(){
         VaccineReserved vaccineReserved = new VaccineReserved();
-        BeanUtils.copyProperties(this, vaccineReserved);
+        // BeanUtils.copyProperties(this, vaccineReserved);
+        setStatus("APPLYED");
+        vaccineReserved.setId(this.id);
+        vaccineReserved.setReservationStatus(this.status);
+        vaccineReserved.setUserName(this.userName);
+        vaccineReserved.setUserPhone(this.userPhone);
         vaccineReserved.publishAfterCommit();
-
-
     }
 
     @PostUpdate
     public void onPostUpdate(){
-        CanceledVaccineReservation canceledVaccineReservation = new CanceledVaccineReservation();
-        BeanUtils.copyProperties(this, canceledVaccineReservation);
-        canceledVaccineReservation.publishAfterCommit();
-
-
+        if(this.getStatus.equals("CANCELED")){
+            CanceledVaccineReservation canceledVaccineReservation = new CanceledVaccineReservation();
+            canceledVaccineReservation.setId(this.id);
+            canceledVaccineReservation.setReservationStatus(this.status);
+            canceledVaccineReservation.publishAfterCommit();
+        }
     }
 
 

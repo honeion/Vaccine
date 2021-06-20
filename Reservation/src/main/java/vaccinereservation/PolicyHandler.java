@@ -16,11 +16,15 @@ public class PolicyHandler{
     public void wheneverCanceledVaccineAssigned_UpdateedReservationStatus(@Payload CanceledVaccineAssigned canceledVaccineAssigned){
 
         if(!canceledVaccineAssigned.validate()) return;
-
         System.out.println("\n\n##### listener UpdateedReservationStatus : " + canceledVaccineAssigned.toJson() + "\n\n");
-
-        // Sample Logic //
-        Reservation reservation = new Reservation();
+        Reservation reservation = reservationRepository.findById(canceledVaccineAssigned.getReservationId());
+        //여기도 상태 나눠서 CANTAPPLY랑 CANCELED로 나눠서 처리
+        if(reservation.getStatus().equals("CANTAPPLY")){
+            //신청 불가 - 이미 불가인 상태라서.
+        }
+        else{
+            reservation.setStatus("CANCELED");
+        }
         reservationRepository.save(reservation);
             
     }
@@ -36,10 +40,6 @@ public class PolicyHandler{
         reservationRepository.save(reservation);
             
     }
-
-
-    @StreamListener(KafkaProcessor.INPUT)
-    public void whatever(@Payload String eventString){}
 
 
 }
