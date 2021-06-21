@@ -16,18 +16,15 @@ public class PolicyHandler{
     public void wheneverCanceledVaccineAssigned_CancelAssignedHospital(@Payload CanceledVaccineAssigned canceledVaccineAssigned){
 
         if(!canceledVaccineAssigned.validate()) return;
-
+        //상태가 CANCELED일때만 처리를 해줘. 업데이트를 해주는데 hospital의 상태가 canceled가 되도록
         System.out.println("\n\n##### listener CancelAssignedHospital : " + canceledVaccineAssigned.toJson() + "\n\n");
-
+        Optional<Hospital> optional = hospitalRepository.findById(canceledVaccineAssigned.get()); //어떤 병원에 할당된 백신인지 찾아야하므로 hospitalId를 줘야함
+        Reservation reservation = optional.get();
         // Sample Logic //
-        Hospital hospital = new Hospital();
+        Hospital hospital = 
+        hospital
         hospitalRepository.save(hospital);
             
     }
-
-
-    @StreamListener(KafkaProcessor.INPUT)
-    public void whatever(@Payload String eventString){}
-
 
 }

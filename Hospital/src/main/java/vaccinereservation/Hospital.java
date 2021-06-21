@@ -14,6 +14,8 @@ public class Hospital {
     private Long id;
     private String name;
     private String location;
+    private String status;  //병원의 상태는 오로지 어떤 이벤트로 인한 것인지 판단하기 위함
+                            //MODIFIED / ASSIGNED / CANCELED
     private Long vaccineId;
     private Long vaccineType;
     private String vaccineName;
@@ -22,28 +24,43 @@ public class Hospital {
     @PostPersist
     public void onPostPersist(){
         HospitalRegistered hospitalRegistered = new HospitalRegistered();
-        BeanUtils.copyProperties(this, hospitalRegistered);
+        hospitalRegistered.setHospitalName(this.name);
+        hospitalRegistered.setHospitalLocation(this.location);
+        hospitalRegistered.setVaccineId(this.vaccineId);
+        hospitalRegistered.setVaccineType(this.vaccineType);
+        hospitalRegistered.setVaccineName(this.vaccineName);
+        hospitalRegistered.setVaccineCount(this.vaccineCount);
         hospitalRegistered.publishAfterCommit();
-
-
     }
 
     @PostUpdate
     public void onPostUpdate(){
-        HospitalAssigned hospitalAssigned = new HospitalAssigned();
-        BeanUtils.copyProperties(this, hospitalAssigned);
-        hospitalAssigned.publishAfterCommit();
 
-
-        CanceledHospitalAssigned canceledHospitalAssigned = new CanceledHospitalAssigned();
-        BeanUtils.copyProperties(this, canceledHospitalAssigned);
-        canceledHospitalAssigned.publishAfterCommit();
-
-
-        HospitalInfoModified hospitalInfoModified = new HospitalInfoModified();
-        BeanUtils.copyProperties(this, hospitalInfoModified);
-        hospitalInfoModified.publishAfterCommit();
-
+        if(this.status().equals("ASSIGNED")){
+            HospitalAssigned hospitalAssigned = new HospitalAssigned();
+            hospitalAssigned.setHospitalId(this.id);
+            hospitalAssigned.setHospitalName(this.name);
+            hospitalAssigned.setHospitalLocation(this.Location);
+            hospitalAssigned.setVaccineId(this.vaccineId); //큰 의미는 없지만 확인겸
+            hospitalAssigned.setVaccineStatus("ASSIGNED");
+            hospitalAssigned.publishAfterCommit();
+        }
+        // 백신이 취소된 CancelAssignedHopital인 경우
+        else if(this.status().equals("CANCELED")){
+            CanceledHospitalAssigned canceledHospitalAssigned = new CanceledHospitalAssigned();
+            canceledHospitalAssigned.setHospitalId(this.id);
+            canceledHospitalAssigned.setHospitalName(this.name);
+            canceledHospitalAssigned.setHospitalLocation(this.Location);
+            canceledHospitalAssigned.setVaccineId(this.vaccineId); //큰 의미는 없지만 확인겸
+            canceledHospitalAssigned.setVaccineStatus("CANCELED");
+            canceledHospitalAssigned.publishAfterCommit();
+        }
+        else{ //MODIFIED
+            HospitalInfoModified hospitalInfoModified = new HospitalInfoModified();
+            BeanUtils.copyProperties(this, hospitalInfoModified);
+            hospitalInfoModified.setStatus("MODIFIED");
+            hospitalInfoModified.publishAfterCommit();
+        }
 
     }
 
@@ -69,10 +86,16 @@ public class Hospital {
     public void setLocation(String location) {
         this.location = location;
     }
+    public void setStatus(String status){
+        this.status = status;
+    }
+    public String getStatus() {
+        return status;
+    }
     public Long getVaccineId() {
         return vaccineId;
     }
-
+ 
     public void setVaccineId(Long vaccineId) {
         this.vaccineId = vaccineId;
     }

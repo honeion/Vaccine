@@ -60,7 +60,7 @@ public class Vaccine {
                 //Application.applicationContext.getBean(vaccinereservation.external.HospitalService.class).assignHospital(hospital);
                 Map<String,String> res = VaccineApplication.applicationContext
                                                            .getBean(vaccinereservation.external.HospitalService.class)
-                                                           .assignHospital(this.getType());
+                                                           .assignHospital(this.getType(),this.getId());
                 System.out.println("#############");
                 for(String s : res.keySet()){
                     System.out.println(res.get(s));
@@ -70,9 +70,15 @@ public class Vaccine {
                 System.out.println(e.getMessage());
             }
             
-
+            //hospitalId를 비롯한 정보를 가져올 수 있어
+            //백신에 세팅하려면 이미 업데이트가 된 상태라서 다른방법을 써야해
+            //근데 아래쪽 캔슬됐을때 hospitalId가 필요한 거라서 업데이트를 해줘야함
+            //그래서 여기서 bean으로 save불러오면 됨. 다시 업데이트를 했을때 assigned랑 canceled를 없애고 
+            //업데이트를 2번하는거임. 가져온 거 담아서 save를 하는데. status를 변경함 assgined2 이런식으로 그거를 Reservation의 UpdatedReservationStatus에서 
+            //vaccinStatus를 assigned2로 받고 resrvation을 업데이트함
             VaccineAssigned vaccineAssigned = new VaccineAssigned();
             BeanUtils.copyProperties(this, vaccineAssigned);
+            //여기서도 세팅해줘
             vaccineAssigned.publishAfterCommit();
         }
         else if(this.status.equals("CANCELED")){
@@ -84,6 +90,7 @@ public class Vaccine {
             canceledVaccineAssigned.setVaccineStatus("CANUSE");
             canceledVaccineAssigned.setReservationId(this.reservationId);
             canceledVaccineAssigned.setReservationStatus("CANCELED");
+            canceledVaccineAssigned.setHospitalId(this.hospitalId);
             canceledVaccineAssigned.publishAfterCommit();
         }
         else { // this.status.equals("MODIFIED") 이거는 따로 업데이트 하는 것이므로 현재는 상태값으로 판단 x
@@ -95,6 +102,7 @@ public class Vaccine {
             vaccineModified.setVaccineStatus(this.status);
             vaccineModified.setVaccineDate(this.date);
             vaccineModified.setVaccineValidationDate(this.validationDate);
+            vaccineModified.setHospitalId(this.hospitalId);
             vaccineModified.publishAfterCommit();
         }
     }
