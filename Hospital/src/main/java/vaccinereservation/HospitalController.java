@@ -19,32 +19,35 @@ import java.util.HashMap;
                     method = RequestMethod.GET,
                     produces = "application/json;charset=UTF-8")
     public Map<String,String> assignHospital(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String status = "";
         Map<String,String> res = new HashMap<String,String>();
         Long vaccineType = Long.valueOf(request.getParameter("vaccineType"));
         Long vaccineId = Long.valueOf(request.getParameter("vaccineId"));
+        String status = "";
+        String data = "";
+        Long id = 0L;
         Iterable<Hospital> hosOptional = hospitalRepository.findAll();
-        hosOptional.forEach(hospital->{
+        for(Hospital hospital : hosOptional){
             System.out.println("["+hospital+"]");
-            if(hospital.getType() == vaccineType){
+            if(hospital.getVaccineType() == vaccineType){
                 Long value = hospital.getVaccineCount();
                 if(value > 0){
                     status = "ASSIGNED";
+                    id = hospital.getId();
                     hospital.setStatus(status);
                     hospital.setVaccineId(vaccineId);
                     hospital.setVaccineCount(value-1);
+                    data = hospital.toString();
                     hospitalRepository.save(hospital);
-                } else{
-                    status = "EMPTY";
-                }
-                break;    
+                    break;
+                } 
             }
-        });
+        };
         if(status.equals("")){
-            status = "NOVACCINE";
+            status = "EMPTYVACCINE";
         }
         res.put("status",status);
-        res.put("data",hospital.toString());
+        res.put("data",data);
+        res.put("hospitalId",id+"");
 
         return res;
     }

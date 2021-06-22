@@ -8,6 +8,7 @@ public class CanceledVaccineAssigned extends AbstractEvent {
     private String vaccineStatus;
     private Long reservationId;
     private String reservationStatus;
+    private Long hospitalId;
 
     public Long getVaccineId() {
         return vaccineId;
@@ -50,5 +51,12 @@ public class CanceledVaccineAssigned extends AbstractEvent {
 
     public void setReservationStatus(String reservationStatus) {
         this.reservationStatus = reservationStatus;
+    }
+    public Long getHospitalId() {
+        return hospitalId;
+    }
+
+    public void setHospitalId(Long hospitalId) {
+        this.hospitalId = hospitalId;
     }
 }

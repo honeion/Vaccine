@@ -23,8 +23,6 @@ public class Reservation {
     @PostPersist
     public void onPostPersist(){
         VaccineReserved vaccineReserved = new VaccineReserved();
-        // BeanUtils.copyProperties(this, vaccineReserved);
-        setStatus("APPLYED");
         vaccineReserved.setReservationId(this.id);
         vaccineReserved.setReservationStatus(this.status);
         vaccineReserved.setUserName(this.userName);

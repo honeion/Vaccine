@@ -5,6 +5,7 @@ public class HospitalAssigned extends AbstractEvent {
     private Long hospitalId;
     private String hospitalName;
     private String hospitalLocation;
+    private String hospitalStatus;
     private Long vaccineId;
     private String vaccineStatus;
 
@@ -28,6 +29,12 @@ public class HospitalAssigned extends AbstractEvent {
 
     public void setHospitalLocation(String hospitalLocation) {
         this.hospitalLocation = hospitalLocation;
+    }
+    public void setHospitalStatus(String hospitalStatus){
+        this.hospitalStatus = hospitalStatus;
+    }
+    public String getHospitalStatus() {
+        return hospitalStatus;
     }
     public Long getVaccineId() {
         return vaccineId;

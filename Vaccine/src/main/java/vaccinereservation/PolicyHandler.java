@@ -32,6 +32,8 @@ public class PolicyHandler{
                 vaccine = v;
                 vaccine.setStatus("ASSIGNED");
                 vaccine.setReservationId(vaccineReserved.getReservationId());
+                vaccine.setUserName(vaccineReserved.getUserName());
+                vaccine.setUserPhone(vaccineReserved.getUserPhone());
                 check = true;
                 vaccineRepository.save(vaccine);
                 break;

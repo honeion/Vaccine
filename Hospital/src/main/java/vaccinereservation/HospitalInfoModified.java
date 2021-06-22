@@ -5,6 +5,7 @@ public class HospitalInfoModified extends AbstractEvent {
     private Long id;
     private String hospitalName;
     private String hospitalLocation;
+    private String hospitalStatus;
     private Long vaccineId;
     private String vaccineName;
     private Long vaccineType;
@@ -31,7 +32,12 @@ public class HospitalInfoModified extends AbstractEvent {
     public String getHospitalLocation() {
         return hospitalLocation;
     }
-
+    public void setHospitalStatus(String hospitalStatus){
+        this.hospitalStatus = hospitalStatus;
+    }
+    public String getHospitalStatus() {
+        return hospitalStatus;
+    }
     public void setHospitalLocation(String hospitalLocation) {
         this.hospitalLocation = hospitalLocation;
     }

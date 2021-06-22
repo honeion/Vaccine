@@ -8,6 +8,7 @@ public class VaccineModified extends AbstractEvent {
     private String vaccineStatus;
     private Date vaccineDate;
     private Date vaccineValidationDate;
+    private Long hospitalId;
 
     public VaccineModified(){
         super();
@@ -54,5 +55,12 @@ public class VaccineModified extends AbstractEvent {
 
     public void setVaccineValidationDate(Date vaccineValidationDate) {
         this.vaccineValidationDate = vaccineValidationDate;
+    }
+    public Long getHospitalId() {
+        return hospitalId;
+    }
+
+    public void setHospitalId(Long hospitalId) {
+        this.hospitalId = hospitalId;
     }
 }
