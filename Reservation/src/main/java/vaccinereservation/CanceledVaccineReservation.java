@@ -6,10 +6,10 @@ public class CanceledVaccineReservation extends AbstractEvent {
     private String reservationStatus;
     private Long vaccineId;
     private Long hospitalId;
-    
-    public Long getReservationId()                              {        return reservationId;    }
-    public void setReservationId(Long reservationId)            {        this.reservationId = reservationId;    }
-    public String getReservationStatus()                        {        return reservationStatus;    }
+
+    public Long getReservationId()                              {        return reservationId;                          }
+    public void setReservationId(Long reservationId)            {        this.reservationId = reservationId;            }
+    public String getReservationStatus()                        {        return reservationStatus;                      }
     public void setReservationStatus(String reservationStatus)  {        this.reservationStatus = reservationStatus;    }
     public Long getVaccineId()                                  {        return vaccineId;                              }
     public void setVaccineId(Long vaccineId)                    {        this.vaccineId = vaccineId;                    }

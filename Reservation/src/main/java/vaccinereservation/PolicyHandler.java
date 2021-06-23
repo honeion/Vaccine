@@ -42,19 +42,22 @@ public class PolicyHandler{
         if(!vaccineAssigned.validate()) return;
 
         System.out.println("\n\n##### listener UpdateedReservationStatus : " + vaccineAssigned.toJson() + "\n\n");
-        //여기서 병원에 백신이 없어서 할당을 할 수 없다. 라고 오면
+      
         
         Optional<Reservation> optional = reservationRepository.findById(vaccineAssigned.getReservationId());
         Reservation reservation = optional.get();
         //할당 받은 경우, 백신 및 병원 정보 업데이트
-        if(vaccineAssigned.getVaccineStatus().equals("ASSIGNED2")){
+        if(vaccineAssigned.getVaccineStatus().equals("ASSIGNED")){
             reservation.setStatus("COMPLETED");
             reservation.setVaccineId(vaccineAssigned.getVaccineId());
             reservation.setHospitalId(vaccineAssigned.getHospitalId());
-        }else if(vaccineAssigned.getVaccineStatus().equals("CANTAPPLY")){
+            //있었다면 세팅이 되는 것
+        }//백신 있는 병원이 없어서 불가한 경우
+        else if(vaccineAssigned.getVaccineStatus().equals("CANTAPPLY")){
             reservation.setStatus("CANTAPPLY");
+            //id는 -1이고..
         }
-        reservationRepository.save(reservation);
+        reservationRepository.save(reservation); //예약이 업데이트 됨
             
     }
 

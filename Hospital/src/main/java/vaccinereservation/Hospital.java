@@ -21,6 +21,8 @@ public class Hospital {
     private String vaccineName;
     private Long vaccineCount;
 
+    private Long reservationId;
+
     @PostPersist
     public void onPostPersist(){
         HospitalRegistered hospitalRegistered = new HospitalRegistered();
@@ -43,8 +45,9 @@ public class Hospital {
             hospitalAssigned.setHospitalName(this.name);
             hospitalAssigned.setHospitalLocation(this.location);
             hospitalAssigned.setHospitalStatus("ASSIGNED");
-            hospitalAssigned.setVaccineId(this.vaccineId); //큰 의미는 없지만 확인겸
+            hospitalAssigned.setVaccineId(this.vaccineId); 
             hospitalAssigned.setVaccineStatus("ASSIGNED");
+            hospitalAssigned.setReservationId(this.reservationId); 
             hospitalAssigned.publishAfterCommit();
         }
         // 백신이 취소된 CancelAssignedHopital인 경우
@@ -67,62 +70,24 @@ public class Hospital {
 
     }
 
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-    public String getLocation() {
-        return location;
-    }
-
-    public void setLocation(String location) {
-        this.location = location;
-    }
-    public void setStatus(String status){
-        this.status = status;
-    }
-    public String getStatus() {
-        return status;
-    }
-    public Long getVaccineId() {
-        return vaccineId;
-    }
- 
-    public void setVaccineId(Long vaccineId) {
-        this.vaccineId = vaccineId;
-    }
-    public Long getVaccineType() {
-        return vaccineType;
-    }
-
-    public void setVaccineType(Long vaccineType) {
-        this.vaccineType = vaccineType;
-    }
-    public String getVaccineName() {
-        return vaccineName;
-    }
-
-    public void setVaccineName(String vaccineName) {
-        this.vaccineName = vaccineName;
-    }
-    public Long getVaccineCount() {
-        return vaccineCount;
-    }
-
-    public void setVaccineCount(Long vaccineCount) {
-        this.vaccineCount = vaccineCount;
-    }
+    public Long getId()                             {        return id;                             }
+    public void setId(Long id)                      {        this.id = id;                          }
+    public String getName()                         {        return name;                           }
+    public void setName(String name)                {        this.name = name;                      }
+    public String getLocation()                     {        return location;                       }
+    public void setLocation(String location)        {        this.location = location;              }
+    public String getStatus()                       {        return status;                         }
+    public void setStatus(String status)            {        this.status = status;                  }
+    public Long getVaccineId()                      {        return vaccineId;                      }
+    public void setVaccineId(Long vaccineId)        {        this.vaccineId = vaccineId;            }
+    public Long getVaccineType()                    {        return vaccineType;                    }
+    public void setVaccineType(Long vaccineType)    {        this.vaccineType = vaccineType;        }    
+    public String getVaccineName()                  {        return vaccineName;                    }
+    public void setVaccineName(String vaccineName)  {        this.vaccineName = vaccineName;        }   
+    public Long getVaccineCount()                   {        return vaccineCount;                   }
+    public void setVaccineCount(Long vaccineCount)  {        this.vaccineCount = vaccineCount;      }
+    public Long getReservationId()                  {        return reservationId;                  }
+    public void setReservationId(Long reservationId){        this.reservationId = reservationId;    }
 
     @Override
 	public String toString() {

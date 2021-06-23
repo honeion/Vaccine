@@ -34,6 +34,7 @@ public class PolicyHandler{
                 vaccine.setReservationId(vaccineReserved.getReservationId());
                 vaccine.setUserName(vaccineReserved.getUserName());
                 vaccine.setUserPhone(vaccineReserved.getUserPhone());
+                vaccine.setHospitalId(vaccineReserved.getHospitalId()); //null로 초기화
                 check = true;
                 vaccineRepository.save(vaccine);
                 break;
@@ -61,6 +62,7 @@ public class PolicyHandler{
         // Sample Logic //
         Vaccine vaccine = vaccineRepository.findByReservationId(canceledVaccineReservation.getReservationId());
         vaccine.setStatus("CANUSE"); //CANCELD라서 CANUSE로 변경
+        vaccine.setReservationStatus("CANCELED"); 
         vaccine.setHospitalId(canceledVaccineReservation.getHospitalId());
         vaccineRepository.save(vaccine);
             

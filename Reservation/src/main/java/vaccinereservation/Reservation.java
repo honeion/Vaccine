@@ -27,6 +27,8 @@ public class Reservation {
         vaccineReserved.setReservationStatus(this.status);
         vaccineReserved.setUserName(this.userName);
         vaccineReserved.setUserPhone(this.userPhone);
+        vaccineReserved.setHospitalId(this.hospitalId);
+        vaccineReserved.setReservationDate(this.date);
         vaccineReserved.publishAfterCommit();
     }
 
@@ -43,55 +45,21 @@ public class Reservation {
     }
 
 
-    public Long getId() {
-        return id;
-    }
+    public Long getId()                         {        return id;                         }
+    public void setId(Long id)                  {        this.id = id;                      }     
+    public Date getDate()                       {        return date;                       }
+    public void setDate(Date date)              {        this.date = date;                  }
+    public String getStatus()                   {        return status;                     }
+    public void setStatus(String status)        {        this.status = status;              }
+    public String getUserName()                 {        return userName;                   }
+    public void setUserName(String userName)    {        this.userName = userName;          }
+    public String getUserPhone()                {        return userPhone;                  }
+    public void setUserPhone(String userPhone)  {        this.userPhone = userPhone;        }
+    public Long getVaccineId()                  {        return vaccineId;                  }
+    public void setVaccineId(Long vaccineId)    {        this.vaccineId = vaccineId;        }
+    public Long getHospitalId()                 {        return hospitalId;                 }
+    public void setHospitalId(Long hospitalId)  {        this.hospitalId = hospitalId;      }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-    public Date getDate() {
-        return date;
-    }
-
-    public void setDate(Date date) {
-        this.date = date;
-    }
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-    public String getUserName() {
-        return userName;
-    }
-
-    public void setUserName(String userName) {
-        this.userName = userName;
-    }
-    public String getUserPhone() {
-        return userPhone;
-    }
-
-    public void setUserPhone(String userPhone) {
-        this.userPhone = userPhone;
-    }
-    public Long getVaccineId() {
-        return vaccineId;
-    }
-
-    public void setVaccineId(Long vaccineId) {
-        this.vaccineId = vaccineId;
-    }
-    public Long getHospitalId() {
-        return hospitalId;
-    }
-
-    public void setHospitalId(Long hospitalId) {
-        this.hospitalId = hospitalId;
-    }
     @Override
 	public String toString() {
 		return "Reservation [id=" + id + ", date=" + date + ", status=" + status + ", userName=" + userName

@@ -22,7 +22,7 @@ public class Vaccine {
     private String userName;
     private String userPhone;
     private Long hospitalId;
-
+    private String reservationStatus;
     @PostPersist
     public void onPostPersist(){
         if(this.status.equals("CANTUSE")){
@@ -62,21 +62,17 @@ public class Vaccine {
                 //Application.applicationContext.getBean(vaccinereservation.external.HospitalService.class).assignHospital(hospital);
                 Map<String,String> res = VaccineApplication.applicationContext
                                                            .getBean(vaccinereservation.external.HospitalService.class)
-                                                           .assignHospital(this.getType(),this.getId());
-                System.out.println("#############");
-                for(String s : res.keySet()){
-                    System.out.println(res.get(s));
-                }
-                System.out.println("#############");
+                                                           .assignHospital(this.getType(),this.getId(),this.getReservationId());
+
                 hospitalStatus = res.get("status")==null?"":res.get("status");
-                hospitalId = res.get("hospitalId")==null?"":res.get("hospitalId");
+                hospitalId = res.get("hospitalId").equals("-1")?"-1":res.get("hospitalId");
                 if(hospitalStatus.equals("EMPTYVACCINE")){
                     //병원에 백신이 없음. 이건 병원이 없어도 가능함 서버는 켜져있어야하지만
                     //예약이 불가능하다라고 ReservationStatus가 Update되어야함
                     vaccineStatus = "CANTAPPLY";
                 }else if(hospitalStatus.equals("ASSIGNED")){
                     //할당이 되었다면 백신에 병원 아이디를 줘야 어디 병원에 몇번 백신이 있는지 관리가 될 것.
-                    vaccineStatus = "ASSIGNED2";
+                    vaccineStatus = "ASSIGNED";
                 }
                 System.out.println("백신상태 : "+vaccineStatus);
                 //여기까지 잘되는거 확인 완료했고. 이거를 업데이트를 치고나서 cancel 관련된 부분 확인하고 customerCenter 내용 체크하면 기본 시나리오는 완성
@@ -93,6 +89,7 @@ public class Vaccine {
             vaccineAssigned.setVaccineDate(this.date);
             vaccineAssigned.setVaccineValidationDate(this.validationDate);
             vaccineAssigned.setReservationId(this.reservationId);
+            vaccineAssigned.setReservationStatus(vaccineStatus);
             vaccineAssigned.setHospitalId(Long.valueOf(hospitalId)); 
             vaccineAssigned.publishAfterCommit();
         }
@@ -136,6 +133,8 @@ public class Vaccine {
     public void setValidationDate(Date validationDate)  {        this.validationDate = validationDate;      }
     public Long getReservationId()                      {        return reservationId;                      }
     public void setReservationId(Long reservationId)    {        this.reservationId = reservationId;        }
+    public String getReservationStatus()                            {        return reservationStatus;                              }
+    public void setReservationStatus(String reservationStatus)      {        this.reservationStatus = reservationStatus;            }
     public String getUserName()                         {        return userName;                           }
     public void setUserName(String userName)            {        this.userName = userName;                  }
     public String getUserPhone()                        {        return userPhone;                          }
