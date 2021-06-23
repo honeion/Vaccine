@@ -10,7 +10,4 @@ public interface ReservationStatusRepository extends CrudRepository<ReservationS
     List<ReservationStatus> findByReservationId(Long reservationId);
     List<ReservationStatus> findByVaccineId(Long vaccineId);
     List<ReservationStatus> findByHospitalId(Long hospitalId);
-    List<ReservationStatus> findByReservationId(Long reservationId);
-    List<ReservationStatus> findByReservationId(Long reservationId);
-
 }
