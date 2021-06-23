@@ -54,7 +54,7 @@ public class Hospital {
             canceledHospitalAssigned.setHospitalName(this.name);
             canceledHospitalAssigned.setHospitalLocation(this.location);
             canceledHospitalAssigned.setHospitalStatus("CANCELED");
-            canceledHospitalAssigned.setVaccineId(this.vaccineId); //큰 의미는 없지만 확인겸
+            canceledHospitalAssigned.setVaccineId(this.vaccineId); 
             canceledHospitalAssigned.setVaccineStatus("CANCELED");
             canceledHospitalAssigned.publishAfterCommit();
         }

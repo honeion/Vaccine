@@ -83,27 +83,20 @@ public class Vaccine {
                 //내일 새벽까지 또 최대한 해보고 가즈아
             } catch (Exception e) {
                 System.out.println(e.getMessage());
-            }
-            
-            //hospitalId를 비롯한 정보를 가져올 수 있어 - 백신어사인, 캔슬백신어사인 둘 다 있어야함
-            //백신에 세팅하려면 이미 업데이트가 된 상태라서 다른방법을 써야해
-            //근데 아래쪽 캔슬됐을때 hospitalId가 필요한 거라서 업데이트를 해줘야함
-            //그래서 여기서 bean으로 save불러오면 됨. 다시 업데이트를 했을때 assigned랑 canceled를 없애고 
-            //업데이트를 2번하는거임. 가져온 거 담아서 save를 하는데. status를 변경함 assgined2 이런식으로 그거를 Reservation의 UpdatedReservationStatus에서 
-            //vaccinStatus를 assigned2로 받고 resrvation을 업데이트함 예약관리 백신관리 병원관리 싹 하고나서 고객센터까지 반드시 화욜 밤에 끝낼 것
-            //수요일밤에는 각종 명령어 정리하고, db 변경해서 세팅해봐야함.
+            }    
+        
             VaccineAssigned vaccineAssigned = new VaccineAssigned();
             vaccineAssigned.setVaccineId(this.id);
             vaccineAssigned.setVaccineName(this.name);
             vaccineAssigned.setVaccineType(this.type);
-            vaccineAssigned.setVaccineStatus(vaccineStatus);//save 아직 안햇지만 일단은 이걸 줄게요.
+            vaccineAssigned.setVaccineStatus(vaccineStatus);
             vaccineAssigned.setVaccineDate(this.date);
             vaccineAssigned.setVaccineValidationDate(this.validationDate);
             vaccineAssigned.setReservationId(this.reservationId);
-            vaccineAssigned.setHospitalId(Long.valueOf(hospitalId)); //업데이트 안된상태라서 가져온 것으로 줘야함
+            vaccineAssigned.setHospitalId(Long.valueOf(hospitalId)); 
             vaccineAssigned.publishAfterCommit();
         }
-        else if(this.status.equals("CANCELED")){
+        else if(this.status.equals("CANUSE")){ //할당되었다가 취소되면 다시 CANUSE 상태로 
             // 백신 할당 취소 시
             CanceledVaccineAssigned canceledVaccineAssigned = new CanceledVaccineAssigned();
             canceledVaccineAssigned.setVaccineId(this.id);
@@ -129,77 +122,26 @@ public class Vaccine {
         }
     }
 
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-    public Long getType() {
-        return type;
-    }
-
-    public void setType(Long type) {
-        this.type = type;
-    }
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-    public Date getDate() {
-        return date;
-    }
-
-    public void setDate(Date date) {
-        this.date = date;
-    }
-    public Date getValidationDate() {
-        return validationDate;
-    }
-
-    public void setValidationDate(Date validationDate) {
-        this.validationDate = validationDate;
-    }
-    public Long getReservationId() {
-        return reservationId;
-    }
-
-    public void setReservationId(Long reservationId) {
-        this.reservationId = reservationId;
-    }
-    public String getUserName() {
-        return userName;
-    }
-
-    public void setUserName(String userName) {
-        this.userName = userName;
-    }
-    public String getUserPhone() {
-        return userPhone;
-    }
-
-    public void setUserPhone(String userPhone) {
-        this.userPhone = userPhone;
-    }
-    public Long getHospitalId() {
-        return hospitalId;
-    }
-
-    public void setHospitalId(Long hospitalId) {
-        this.hospitalId = hospitalId;
-    }
+    public Long getId()                                 {        return id;                                 }
+    public void setId(Long id)                          {        this.id = id;                              }
+    public String getName()                             {        return name;                               }
+    public void setName(String name)                    {        this.name = name;                          }
+    public Long getType()                               {        return type;                               }
+    public void setType(Long type)                      {        this.type = type;                          }
+    public String getStatus()                           {        return status;                             }
+    public void setStatus(String status)                {        this.status = status;                      }
+    public Date getDate()                               {        return date;                               }
+    public void setDate(Date date)                      {        this.date = date;                          }
+    public Date getValidationDate()                     {        return validationDate;                     }
+    public void setValidationDate(Date validationDate)  {        this.validationDate = validationDate;      }
+    public Long getReservationId()                      {        return reservationId;                      }
+    public void setReservationId(Long reservationId)    {        this.reservationId = reservationId;        }
+    public String getUserName()                         {        return userName;                           }
+    public void setUserName(String userName)            {        this.userName = userName;                  }
+    public String getUserPhone()                        {        return userPhone;                          }
+    public void setUserPhone(String userPhone)          {        this.userPhone = userPhone;                }
+    public Long getHospitalId()                         {        return hospitalId;                         }
+    public void setHospitalId(Long hospitalId)          {        this.hospitalId = hospitalId;              }
 
     @Override
 	public String toString() {

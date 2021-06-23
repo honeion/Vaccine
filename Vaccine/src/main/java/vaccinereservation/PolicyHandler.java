@@ -60,7 +60,8 @@ public class PolicyHandler{
         // 여기서는 Reseravtion Id, STATUS : CANCELED 가 옴 업데이트를 
         // Sample Logic //
         Vaccine vaccine = vaccineRepository.findByReservationId(canceledVaccineReservation.getReservationId());
-        vaccine.setStatus("CANCELED");
+        vaccine.setStatus("CANUSE"); //CANCELD라서 CANUSE로 변경
+        vaccine.setHospitalId(canceledVaccineReservation.getHospitalId());
         vaccineRepository.save(vaccine);
             
     }

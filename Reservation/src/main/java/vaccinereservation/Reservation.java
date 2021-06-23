@@ -36,6 +36,8 @@ public class Reservation {
             CanceledVaccineReservation canceledVaccineReservation = new CanceledVaccineReservation();
             canceledVaccineReservation.setReservationId(this.id);
             canceledVaccineReservation.setReservationStatus(this.status);
+            canceledVaccineReservation.setVaccineId(this.vaccineId);
+            canceledVaccineReservation.setHospitalId(this.hospitalId);
             canceledVaccineReservation.publishAfterCommit();
         }
     }
