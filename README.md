@@ -40,13 +40,14 @@
 
 기능적 요구사항
 1. 병원 관리자는 병원정보를 등록한다
-2. 고객은 백신을 예약한다
-3. 예약이 되면 백신이 할당된다
-4. 백신이 할당되면 백신이 있는 병원에 등록되며 예약 현황이 업데이트 된다.
-5. 고객은 백신 예약을 취소할 수 있다
-6. 예약이 취소되면 백신 할당 및 병원 등록이 취소되며 예약 현황이 업데이트 된다.
-7. 예약 현황은 언제나 확인할 수 있다
-8. 병원에 등록/등록취소가 되면 알림을 보낸다.
+2. 백신 관리자는 백신정보를 등록한다
+3. 고객은 백신을 예약한다
+4. 예약이 되면 사용 가능한 백신이 할당된다
+5. 백신이 할당되면 백신이 있는 병원에 등록되며 예약 현황이 업데이트 된다.
+6. 고객은 백신 예약을 취소할 수 있다
+7. 예약이 취소되면 백신 할당 및 병원 등록이 취소되며 예약 현황이 업데이트 된다.
+8. 예약 현황은 언제나 확인할 수 있다
+9. 병원에 등록/등록취소가 되면 알림을 보낸다.
 
 
 비기능적 요구사항
@@ -92,7 +93,7 @@
 ![image](https://user-images.githubusercontent.com/47212652/123186353-e9765880-d4d2-11eb-99bd-62475aadffe7.png)
 
 ## Event Storming 결과
-* MSAEZ 모델링한 이벤트스토밍 결과:  http://www.msaez.io/#/storming/pYauKq27pAMMO4ZZcMLRDtjzgIv1/share/40d9c225e0f9826deff3b8035d97b38f
+* MSAEZ 모델링한 이벤트스토밍 결과:  http://www.msaez.io/#/storming/SZ2RkFOtlfY6x5OS42IoM4ytcR72/18bedb212731235c2ecc665b27c2d66b
 
 
 ### 이벤트 도출
@@ -112,15 +113,16 @@
 ### 폴리시의 이동과 컨텍스트 매핑 (점선은 Pub/Sub, 실선은 Req/Resp)
 ![image](https://user-images.githubusercontent.com/47212652/123186733-bb454880-d4d3-11eb-969f-e6e4a77ece18.png)
 
-  - 도메인 서열 분리 
-    1. Core Domain(reservation, vaccine) : 없어서는 안될 핵심 서비스이며, 연견 Up-time SLA 수준을 99.999% 목표, 배포주기는 reservatoin 의 경우 1주일 1회 미만, vaccine 의 경우 1개월 1회 미만
-    2. Supporting Domain(customer center) : 경쟁력을 내기위한 서비스이며, SLA 수준은 연간 60% 이상 uptime 목표, 배포주기는 각 팀의 자율이나 표준 스프린트 주기가 1주일 이므로 1주일 1회 이상을 기준으로 함.
-    3. General Domain(hospital) : 병원 정보와 관련된 서비스로 병원들과 협약을 맺은 3rd Party 외부 서비스를 사용하는 것이 경쟁력이 높음 
+- 도메인 서열 분리 
+  1. Core Domain(reservation, vaccine) : 없어서는 안될 핵심 서비스이며, 연견 Up-time SLA 수준을 99.999% 목표, 배포주기는 reservatoin 의 경우 1주일 1회 미만, vaccine 의 경우 1개월 1회 미만
+  2. Supporting Domain(customer center) : 경쟁력을 내기위한 서비스이며, SLA 수준은 연간 60% 이상 uptime 목표, 배포주기는 각 팀의 자율이나 표준 스프린트 주기가 1주일 이므로 1주일 1회 이상을 기준으로 함.
+  3. General Domain(hospital) : 병원 정보와 관련된 서비스로 병원들과 협약을 맺은 3rd Party 외부 서비스를 사용하는 것이 경쟁력이 높음 
 
 ### 기능적 요구사항 검증
 ![image](https://user-images.githubusercontent.com/47212652/123187659-889c4f80-d4d5-11eb-8b7b-47ee13d89f7d.png)
 
     - 병원 관리자는 병원정보를 등록한다 (o)
+    - 백신 관리자는 백신정보를 등록한다 (o)
     - 고객은 백신을 예약한다 (o)
     - 예약이 되면 백신이 할당된다 (o)
     - 백신이 할당되면 백신이 있는 병원에 등록되며 예약 현황이 업데이트 된다. (o)
@@ -259,8 +261,6 @@ public class Reservation {
 	}
 
 }
-
-
 ```
 
 - Entity Pattern 과 Repository Pattern 을 적용하여 JPA 기반의 다양한 데이터소스 유형 (RDB or NoSQL) 에 대한 별도의 처리 없이 데이터 접근 어댑터를 자동 생성하기 위하여 Spring Data REST 의 RestRepository 를 적용하였다.
@@ -369,6 +369,7 @@ http GET http://localhost:8084/reservationStatuses/1
 ```
 
 > 백신 예약 신청 후 Reservation 동작 결과
+
 ![image](https://user-images.githubusercontent.com/47212652/123189901-97850100-d4d9-11eb-8155-3bb04e8cdc5c.png)
 ![image](https://user-images.githubusercontent.com/47212652/123189958-af5c8500-d4d9-11eb-9076-71b07a8e76f1.png)
 
@@ -377,6 +378,7 @@ http GET http://localhost:8084/reservationStatuses/1
 - Materialized View 구현을 통해 다른 마이크로서비스의 데이터 원본에 접근없이 내 서비스의 화면 구성과 잦은 조회가 가능하게 하였습니다. 본 과제에서 View 서비스는 CustomerCenter 서비스가 수행하며 예약 상태를 보여준다.
 
 > 백신 예약 신청 후 customerCenter 결과(백신 할당된 상태)
+
 ![image](https://user-images.githubusercontent.com/47212652/123190050-d31fcb00-d4d9-11eb-8e52-bff822df7eb9.png)
 
 ## 폴리글랏 퍼시스턴스
@@ -480,6 +482,7 @@ server:
 - 단일화 된 진입점 8088포트로 진입함을 확인할 수 있습니다.
 
 ![image](https://user-images.githubusercontent.com/47212652/123190392-6c4ee180-d4da-11eb-9f5d-b81b90cb844e.png)
+
 ## 동기식 호출 과 Fallback 처리
 
 분석단계에서의 조건 중 하나로 Vaccine -> Hospital 간의 호출은 동기식 일관성을 유지하는 트랜잭션으로 처리하기로 하였다. 호출 프로토콜은 이미 앞서 Rest Repository 에 의해 노출되어있는 REST 서비스를 FeignClient 를 이용하여 호출하도록 한다. 
@@ -693,10 +696,7 @@ http GET http://localhost:8088/reservations/1     # 신청 상태. 현재 불가
 
 - 아래와 같은 이벤트는 명확히 publishing 되어있으므로 잠시 내려가도 신청을 받을 수 있음
 {"eventType":"VaccineReserved","timestamp":"20210624130515","reservationId":2,"reservationStatus":"APPLYED","reservationDate":1624233600000,"userName":"tester","userPhone":"010-1234-5679","hospitalId":null}
-
-
 ```
-
 
 # 운영
 
@@ -890,15 +890,15 @@ kubectl expose deployment hospital --port=8080
 ```
 
 - 부하테스터 siege 툴을 통한 서킷브레이커 동작 확인:
-    - 동시사용자 100명
-    - 60초 동안 실시
-    - siege pod 없으면
-      > kubectl run siege --image=apexacme/siege-nginx 
-    - siege 접속
-      > kubectl exec -it pod/siege-d484db9c-lpvmr -c siege -- /bin/bash
-    - siege 종료
-      > Ctrl + C -> exit
-    - 테스트 코드
+  - 동시사용자 100명
+  - 60초 동안 실시
+  - siege pod 없으면
+    > kubectl run siege --image=apexacme/siege-nginx 
+  - siege 접속
+    > kubectl exec -it pod/siege-d484db9c-lpvmr -c siege -- /bin/bash
+  - siege 종료
+    > Ctrl + C -> exit
+  - 테스트 코드
     ```
     siege -c100 -t60S -r10 -v --content-type "application/json" 'http://Vaccine:8080/vaccines/1 PATCH {"name":"moderna","type":1,"status":"ASSIGNED"}'
     ```
@@ -986,7 +986,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import java.util.Map;
 import java.util.Date;
 
-@FeignClient(name="Hospital", url="${api.url.hospital}")//#"http://Hospital:8080")
+@FeignClient(name="Hospital", url="${api.url.hospital}")
 public interface HospitalService {
 
     @RequestMapping(method= RequestMethod.GET, path="/hospitals/assignHospital")
