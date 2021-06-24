@@ -19,11 +19,11 @@ spec:
           image: skccuser20.azurecr.io/vaccine:latest
           ports:
             - containerPort: 8080
-            resources:
-              limits:
-                cpu: 500m
-              requests:
-                cpu: 200m
+          resources:
+            limits:
+              cpu: 500m
+            requests:
+              cpu: 200m
           readinessProbe:
             httpGet:
               path: '/actuator/health'
