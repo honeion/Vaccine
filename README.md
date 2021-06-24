@@ -374,7 +374,7 @@ http GET http://localhost:8084/reservationStatuses/1
 
 ## CQRS
 
-- Materialized View 구현을 통해 다른 마이크로서비스의 데이터 원본에 접근없이 내 서비스의 화면 구성과 잦은 조회가 가능하게 하였습니다. 본 과제에서 View 서비스는 CustomerCenter 서비스가 수행하며 회의실 상태를 보여준다.
+- Materialized View 구현을 통해 다른 마이크로서비스의 데이터 원본에 접근없이 내 서비스의 화면 구성과 잦은 조회가 가능하게 하였습니다. 본 과제에서 View 서비스는 CustomerCenter 서비스가 수행하며 예약 상태를 보여준다.
 
 > 백신 예약 신청 후 customerCenter 결과(백신 할당된 상태)
 ![image](https://user-images.githubusercontent.com/47212652/123190050-d31fcb00-d4d9-11eb-8e52-bff822df7eb9.png)
@@ -705,29 +705,102 @@ http GET http://localhost:8088/reservations/1     # 신청 상태. 현재 불가
 각 구현체들은 각자의 source repository 에 구성되었고, 도커라이징, deploy 및
 서비스 생성을 진행하였다.
 
-- git에서 소스 가져오기
+- 리소스그룹 `skcc-user20-rsrcgrp`
+- 레지스트리 `skccuser20`
+- 쿠버네티스 `skccuser20-aks`
+
+- Helm 설치 설정
 ```
-git clone https://github.com/jypark002/hifive.git
+curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 > get_helm.sh
+chmod 700 get_helm.sh
+./get_helm.sh
+kubectl --namespace kube-system create sa tiller
+kubectl create clusterrolebinding tiller --clusterrole cluster-admin --serviceaccount=kube-system:tiller
 ```
+- 카프카 세팅
+```
+helm repo add incubator https://charts.helm.sh/incubator 
+helm repo update 
+kubectl create ns kafka 
+helm install my-kafka --namespace kafka incubator/kafka 
+
+or
+ 
+helm repo update
+helm repo add bitnami https://charts.bitnami.com/bitnami
+kubectl create ns kafka
+helm install my-kafka bitnami/kafka --namespace kafka
+```
+
+- 소스 세팅
+```
+mkdir vaccinereservation
+cd vaccinereservation
+git clone https://github.com/honeion/Vaccine.git
+```
+
+- Azure Login
+```
+az login
+az aks get-credentials --resource-group skcc-user20-rsrcgrp --name skcc-user20-aks
+
+# Azure AKS에 ACR Attach 설정
+
+az aks update -n skccuser20-aks -g skcc-user20-rsrcgrp --attach-acr skccuser20
+az acr login --name skccuser20
+```
+
 - Build 하기
 ```
-cd hifive
-cd conference
+cd Vaccine
+cd Reservation # Vaccine, Hospital, CustomerCenter, gateway 동일
 mvn package
 ```
-- 도커라이징 : Azure 레지스트리에 도커 이미지 푸시하기
+- 도커라이징
 ```
-az acr build --registry skccuser05 --image skccuser05.azurecr.io/conference:latest .
+docker build -t skccuser20.azurecr.io/reservation:latest .
+docker push skccuser20.azurecr.io/reservation:latest
+docker build -t skccuser20.azurecr.io/vaccine:latest .
+docker push skccuser20.azurecr.io/vaccine:latest 
+docker build -t skccuser20.azurecr.io/hospital:latest .
+docker push skccuser20.azurecr.io/hospital:latest 
+docker build -t skccuser20.azurecr.io/customercenter:latest .
+docker push skccuser20.azurecr.io/customercenter:latest 
+docker build -t skccuser20.azurecr.io/gateway:latest .
+docker push skccuser20.azurecr.io/gateway:latest 
+
+or
+
+az acr build --registry skccuser20 --image skccuser20.azurecr.io/Reservation:latest .
+az acr build --registry skccuser20 --image skccuser20.azurecr.io/Caccine:latest .
+az acr build --registry skccuser20 --image skccuser20.azurecr.io/Hospital:latest .
+az acr build --registry skccuser20 --image skccuser20.azurecr.io/CustomerCenter:latest .
+az acr build --registry skccuser20 --image skccuser20.azurecr.io/gateway:latest .
 ```
-- 컨테이너라이징 : 디플로이 생성 확인
+
+- 디플로이 생성
 ```
-kubectl create deploy conference --image=skccuser05.azurecr.io/conference:latest
+kubectl create deploy reservation --image=skccuser20.azurecr.io/reservation:latest
+kubectl create deploy vaccine --image=skccuser20.azurecr.io/vaccine:latest
+kubectl create deploy hospital --image=skccuser20.azurecr.io/hospital:latest
+kubectl create deploy customercenter --image=skccuser20.azurecr.io/customercenter:latest
+kubectl create deploy gateway --image=skccuser20.azurecr.io/gateway:latest
 ```
-- 컨테이너라이징 : 서비스 생성
+
+- 서비스 생성
 ```
-kubectl expose deploy conference --port=8080
+kubectl expose deployment gateway --type=LoadBalancer --port=8080
+kubectl expose deployment reservation --port=8080
+kubectl expose deployment vaccine --port=8080
+kubectl expose deployment hospital --port=8080
+kubectl expose deployment customercenter --port=8080
 ```
-> customerCenter, pay, room, gateway 서비스도 동일한 배포 작업 반복
+
+- 확인
+```
+kubectl get all
+```
+![image](https://user-images.githubusercontent.com/47212652/123219458-e2b60880-d507-11eb-88bc-08c9dfc06abc.png)
 
 ## 동기식 호출 / 서킷 브레이킹 / 장애격리
 

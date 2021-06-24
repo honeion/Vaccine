@@ -1,22 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: Hospital
+  name: hospital
   labels:
-    app: Hospital
+    app: hospital
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: Hospital
+      app: hospital
   template:
     metadata:
       labels:
-        app: Hospital
+        app: hospital
     spec:
       containers:
-        - name: Hospital
-          image: username/Hospital:latest
+        - name: hospital
+          image: username/hospital:latest
           ports:
             - containerPort: 8080
           readinessProbe:

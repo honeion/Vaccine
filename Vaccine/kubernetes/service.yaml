@@ -1,12 +1,12 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: Vaccine
+  name: vaccine
   labels:
-    app: Vaccine
+    app: vaccine
 spec:
   ports:
     - port: 8080
       targetPort: 8080
   selector:
-    app: Vaccine
+    app: vaccine
