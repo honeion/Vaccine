@@ -40,6 +40,11 @@ public class Hospital {
     public void onPostUpdate(){
 
         if(this.status.equals("ASSIGNED")){
+            try {
+                Thread.currentThread().sleep((long) (300 + Math.random() * 220));
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             HospitalAssigned hospitalAssigned = new HospitalAssigned();
             hospitalAssigned.setHospitalId(this.id);
             hospitalAssigned.setHospitalName(this.name);
