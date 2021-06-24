@@ -27,7 +27,7 @@ import java.util.HashMap;
         String data = "";
         Long id = -1L;
         try {
-            Thread.currentThread().sleep((long) (300 + Math.random() * 250));
+            Thread.currentThread().sleep((long) (500 + Math.random() * 220));
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

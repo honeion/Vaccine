@@ -54,11 +54,11 @@ public class Vaccine {
             String hospitalStatus = "";
             String hospitalId = "";
             String vaccineStatus =this.status;
-            try {
-                Thread.currentThread().sleep((long) (300 + Math.random() * 250));
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            // try {
+            //     Thread.currentThread().sleep((long) (300 + Math.random() * 250));
+            // } catch (InterruptedException e) {
+            //     e.printStackTrace();
+            // }
             try {
                 Map<String,String> res = VaccineApplication.applicationContext
                                                            .getBean(vaccinereservation.external.HospitalService.class)
