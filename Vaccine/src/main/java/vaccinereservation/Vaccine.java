@@ -55,7 +55,7 @@ public class Vaccine {
             String hospitalId = "";
             String vaccineStatus =this.status;
             try {
-                Thread.currentThread().sleep((long) (500 + Math.random() * 220));
+                Thread.currentThread().sleep((long) (300 + Math.random() * 220));
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
