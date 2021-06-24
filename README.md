@@ -805,55 +805,107 @@ kubectl get all
 ## 동기식 호출 / 서킷 브레이킹 / 장애격리
 
 - Spring FeignClient + Hystrix을 사용하여 서킷 브레이킹 구현
-- Hystrix 설정 : 결제 요청 쓰레드의 처리 시간이 410ms가 넘어서기 시작한 후 어느정도 지속되면 서킷 브레이커가 닫히도록 설정
-- 결제를 요청하는 Conference 서비스에서 Hystrix 설정
+- Hystrix 설정 : 결제 요청 쓰레드의 처리 시간이 510ms가 넘어서기 시작한 후 어느정도 지속되면 서킷 브레이커가 닫히도록 설정
+- 병원 할당을 요청하는 Vaccine 서비스에서 Hystrix 설정
 
-> Conference 서비스의 application.yml 파일
+> Vaccine 서비스의 application.yml 파일
 ```yaml
 feign:
   hystrix:
     enabled: true
+
 hystrix:
   command:
     default:
-      execution.isolation.thread.timeoutInMilliseconds: 610
+      execution.isolation.thread.timeoutInMilliseconds: 510
 ```
 
-- 결제 서비스(pay)에서 임의 부하 처리 - 400 밀리에서 증감 220 밀리 정도 왔다갔다 하게
-> Pay 서비스의 Pay.java 파일
+- 백신 서비스(Vaccine)및 병원 서비스(Hospital) 컨트롤러에서 임의 부하 처리 
+  - 사용 가능한 백신이 ASSIGNED(UPDATE) 되었을 때, 해당 백신이 있는 병원을 찾기위해 요청 수행
+  - 요청하는 쪽, 요청받는쪽 양쪽에 부하를 주어 장애 유발
+> Vaccine 서비스의 Vaccine.java 파일
 ```java
-    @PostPersist
-    public void onPostPersist(){
-        if (this.getStatus() != "PAID") return;
+    @PostUpdate
+    public void onPostUpdate(){
+      
+        //백신 할당 시 Request 보내고 가서 백신있는 병원 찾고 상태값(할당가능/불가능), 수량, 체크
+        if(this.status.equals("ASSIGNED")){
+            String hospitalStatus = "";
+            String hospitalId = "";
+            String vaccineStatus =this.status;
+            try {
+                Thread.currentThread().sleep((long) (500 + Math.random() * 220));
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            try {
+                Map<String,String> res = VaccineApplication.applicationContext
+                                                           .getBean(vaccinereservation.external.HospitalService.class)
+                                                           .assignHospital(this.getType(),this.getId(),this.getReservationId());
 
-        Paid paid = new Paid();
-        paid.setPayId(this.payId);
-        paid.setPayStatus(this.status);
-        paid.setConferenceId(this.conferenceId);
-        paid.setRoomNumber(this.roomNumber);
-        paid.publishAfterCommit();
-
+                hospitalStatus = res.get("status")==null?"":res.get("status");
+                hospitalId = res.get("hospitalId").equals("-1")?"-1":res.get("hospitalId");
+                if(hospitalStatus.equals("EMPTYVACCINE")){
+                    //병원에 백신이 없음. 
+                    vaccineStatus = "CANTAPPLY";
+                }else if(hospitalStatus.equals("ASSIGNED")){
+                    //할당이 되었다면 백신에 병원 아이디를 줘야 어디 병원에 몇번 백신이 있는지 관리가 될 것. 
+                    vaccineStatus = "ASSIGNED";
+                }
+                System.out.println("백신상태 : "+vaccineStatus);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }    
+        ...
+        }
+        ...
+```
+> Hospital 서비스의 HospitalController.java 파일
+```java
+public Map<String,String> assignHospital(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        Map<String,String> res = new HashMap<String,String>();
+        Long vaccineType = Long.valueOf(request.getParameter("vaccineType"));
+        Long vaccineId = Long.valueOf(request.getParameter("vaccineId"));
+        Long reservationId = Long.valueOf(request.getParameter("reservationId"));
+        String status = "";
+        String data = "";
+        Long id = -1L;
         try {
-            Thread.currentThread().sleep((long) (400 + Math.random() * 220));
+            Thread.currentThread().sleep((long) (500 + Math.random() * 220));
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-    }
+        Iterable<Hospital> hosOptional = hospitalRepository.findAll();
+        ...
+```
+- 수정 후 재배포
+```
+az acr build --registry skccuser20 --image skccuser20.azurecr.io/vaccine:latest .
+az acr build --registry skccuser20 --image skccuser20.azurecr.io/hospital:latest .
+kubectl delete deploy,svc hospital vaccine
+kubectl create deploy hospital --image=skccuser20.azurecr.io/hospital:latest
+kubectl create deploy vaccine --image=skccuser20.azurecr.io/vaccine:latest
 ```
 
 - 부하테스터 siege 툴을 통한 서킷브레이커 동작 확인:
     - 동시사용자 100명
     - 60초 동안 실시
+    - siege pod 없으면
+      > kubectl run siege --image=apexacme/siege-nginx 
+    - siege 접속
+      > kubectl exec -it pod/siege-d484db9c-lpvmr -c siege -- /bin/bash
+    - siege 종료
+      > Ctrl + C -> exit
+    - 테스트 코드
+    ```
+    siege -c100 -t60S -r10 -v --content-type "application/json" 'http://Vaccine:8080/vaccines/1 PATCH {"name":"moderna","type":1,"status":"ASSIGNED"}'
+    ```
+- 부하가 발생하고 서킷브레이커가 발동하여 요청 실패하였고, 밀린 부하가 다시 처리되면서 백신 수정 및 병원 할당 요청을 받기 시작
+![image](https://user-images.githubusercontent.com/47212652/123272188-7bff1200-d53c-11eb-9065-6737ccc9d225.png)
 
-```
-siege -c100 -t60S -r10 -v --content-type "application/json" 'http://52.231.34.176:8080/conferences POST {"status":"", "payId":0, "roomNumber":1}'
-```
-- 부하가 발생하고 서킷브레이커가 발동하여 요청 실패하였고, 밀린 부하가 다시 처리되면서 회의실 신청(Apply)를 받기 시작
-![Cap 2021-06-08 10-37-57-954](https://user-images.githubusercontent.com/80938080/121108974-a450f600-c845-11eb-94ed-621b894f0da1.png)
 
-
-- 운영 중인 시스템은 죽지 않고 지속적으로 서킷브레이커에 의하여 적절히 회로가 열림과 닫힘이 벌어지면서 자원을 보호하고 있음을 보여줌. 하지만, 47.10% 가 성공하였고, 53%가 실패했다는 것은 고객 사용성에 있어 좋지 않기 때문에 Retry 설정과 동적 Scale out (replica의 자동적 추가,HPA) 을 통하여 시스템을 확장 해주는 후속처리가 필요.
-![Cap 2021-06-08 10-39-01-129](https://user-images.githubusercontent.com/80938080/121109032-bdf23d80-c845-11eb-906b-9416924c6c1c.png)
+- 운영 중인 시스템은 죽지 않고 지속적으로 서킷브레이커에 의하여 적절히 회로가 열림과 닫힘이 벌어지면서 자원을 보호하고 있음을 보여줌. 하지만, 84.72% 가 성공하였고, 나머지 15.28%의 고객을 위해 Retry 설정과 동적 Scale out (replica의 자동적 추가,HPA) 을 통하여 시스템을 확장 해주는 후속처리가 필요.
+![image](https://user-images.githubusercontent.com/47212652/123272240-8ae5c480-d53c-11eb-8ce7-7e60af11216e.png)
 
 
 ## 오토스케일아웃 (HPA)

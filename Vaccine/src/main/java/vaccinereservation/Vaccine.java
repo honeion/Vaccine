@@ -67,11 +67,10 @@ public class Vaccine {
                 hospitalStatus = res.get("status")==null?"":res.get("status");
                 hospitalId = res.get("hospitalId").equals("-1")?"-1":res.get("hospitalId");
                 if(hospitalStatus.equals("EMPTYVACCINE")){
-                    //병원에 백신이 없음. 이건 병원이 없어도 가능함 서버는 켜져있어야하지만
-                    //예약이 불가능하다라고 ReservationStatus가 Update되어야함
+                    //병원에 백신이 없음. 
                     vaccineStatus = "CANTAPPLY";
                 }else if(hospitalStatus.equals("ASSIGNED")){
-                    //할당이 되었다면 백신에 병원 아이디를 줘야 어디 병원에 몇번 백신이 있는지 관리가 될 것.
+                    //할당이 되었다면 백신에 병원 아이디를 줘야 어디 병원에 몇번 백신이 있는지 관리가 될 것. 
                     vaccineStatus = "ASSIGNED";
                 }
                 System.out.println("백신상태 : "+vaccineStatus);
