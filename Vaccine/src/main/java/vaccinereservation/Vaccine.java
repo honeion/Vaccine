@@ -48,11 +48,7 @@ public class Vaccine {
 
     @PostUpdate
     public void onPostUpdate(){
-        try {
-            Thread.currentThread().sleep((long) (800 + Math.random() * 200));
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+      
         //백신 할당 시 Request 보내고 가서 백신있는 병원 찾고 상태값(할당가능/불가능), 수량, 체크
         if(this.status.equals("ASSIGNED")){
             String hospitalStatus = "";
