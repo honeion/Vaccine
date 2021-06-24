@@ -48,16 +48,16 @@ public class Vaccine {
 
     @PostUpdate
     public void onPostUpdate(){
+        try {
+            Thread.currentThread().sleep((long) (600 + Math.random() * 100));
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         //백신 할당 시 Request 보내고 가서 백신있는 병원 찾고 상태값(할당가능/불가능), 수량, 체크
         if(this.status.equals("ASSIGNED")){
             String hospitalStatus = "";
             String hospitalId = "";
             String vaccineStatus =this.status;
-            try {
-                Thread.currentThread().sleep((long) (500 + Math.random() * 220));
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
             try {
                 Map<String,String> res = VaccineApplication.applicationContext
                                                            .getBean(vaccinereservation.external.HospitalService.class)
