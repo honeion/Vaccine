@@ -70,3 +70,7 @@ hystrix:
   command:
     default:
       execution.isolation.thread.timeoutInMilliseconds: 510
+
+api:
+  url:
+    hospital: ${configurl}
