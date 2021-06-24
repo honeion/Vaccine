@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: customerCenter
-          image: username/customerCenter:latest
+          image: skccuser20.azurecr.io/customerCenter:latest
           ports:
             - containerPort: 8080
           readinessProbe:

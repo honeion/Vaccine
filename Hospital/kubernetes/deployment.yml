@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: hospital
-          image: username/hospital:latest
+          image: skccuser20.azurecr.io/hospital:latest
           ports:
             - containerPort: 8080
           readinessProbe:
