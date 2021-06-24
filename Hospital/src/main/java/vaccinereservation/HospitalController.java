@@ -26,11 +26,7 @@ import java.util.HashMap;
         String status = "";
         String data = "";
         Long id = -1L;
-        try {
-            Thread.currentThread().sleep((long) (500 + Math.random() * 220));
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        
         Iterable<Hospital> hosOptional = hospitalRepository.findAll();
         for(Hospital hospital : hosOptional){
             System.out.println("["+hospital+"]");
