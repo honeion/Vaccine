@@ -54,6 +54,11 @@ public class Vaccine {
             String hospitalId = "";
             String vaccineStatus =this.status;
             try {
+                Thread.currentThread().sleep((long) (500 + Math.random() * 220));
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            try {
                 Map<String,String> res = VaccineApplication.applicationContext
                                                            .getBean(vaccinereservation.external.HospitalService.class)
                                                            .assignHospital(this.getType(),this.getId(),this.getReservationId());
@@ -85,11 +90,7 @@ public class Vaccine {
             vaccineAssigned.setHospitalId(Long.valueOf(hospitalId)); 
             vaccineAssigned.publishAfterCommit();
 
-            try {
-                Thread.currentThread().sleep((long) (400 + Math.random() * 220));
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+           
         }
         else if(this.status.equals("CANUSE")){ //할당되었다가 취소되면 다시 CANUSE 상태로 
             // 백신 할당 취소 시

@@ -771,10 +771,10 @@ docker push skccuser20.azurecr.io/gateway:latest
 
 or
 
-az acr build --registry skccuser20 --image skccuser20.azurecr.io/Reservation:latest .
-az acr build --registry skccuser20 --image skccuser20.azurecr.io/Caccine:latest .
-az acr build --registry skccuser20 --image skccuser20.azurecr.io/Hospital:latest .
-az acr build --registry skccuser20 --image skccuser20.azurecr.io/CustomerCenter:latest .
+az acr build --registry skccuser20 --image skccuser20.azurecr.io/reservation:latest .
+az acr build --registry skccuser20 --image skccuser20.azurecr.io/vaccine:latest .
+az acr build --registry skccuser20 --image skccuser20.azurecr.io/hospital:latest .
+az acr build --registry skccuser20 --image skccuser20.azurecr.io/customerCenter:latest .
 az acr build --registry skccuser20 --image skccuser20.azurecr.io/gateway:latest .
 ```
 
