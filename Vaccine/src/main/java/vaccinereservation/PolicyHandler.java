@@ -16,7 +16,6 @@ public class PolicyHandler{
     public void wheneverVaccineReserved_ReserveVaccine(@Payload VaccineReserved vaccineReserved){
 
         if(!vaccineReserved.validate()) return;
-
         System.out.println("\n\n##### listener ReserveVaccine : " + vaccineReserved.toJson() + "\n\n");
 
         // Sample Logic //
@@ -29,6 +28,7 @@ public class PolicyHandler{
 
         for(Vaccine v : list){
             if(v.getStatus().equals("CANUSE")){
+                System.out.println("?????????????????");
                 vaccine = v;
                 vaccine.setStatus("ASSIGNED");
                 vaccine.setReservationId(vaccineReserved.getReservationId());

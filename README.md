@@ -2,13 +2,10 @@
 
 # 백신 예약 시스템
 # Table of contents
-
 - [백신 예약 시스템](#백신-예약-시스템)
 - [Table of contents](#table-of-contents)
 - [서비스 시나리오](#서비스-시나리오)
 - [체크포인트](#체크포인트)
-  - [12. Self-healing (Liveness Probe)](#12-self-healing-liveness-probe)
-  - [아래 작성 필요](#아래-작성-필요)
 - [분석/설계](#분석설계)
   - [AS-IS 조직 (Horizontally-Aligned)](#as-is-조직-horizontally-aligned)
   - [TO-BE 조직 (Vertically-Aligned)](#to-be-조직-vertically-aligned)
@@ -84,9 +81,7 @@
 10. Config Map/ Persistence Volume
 11. Polyglot
 12. Self-healing (Liveness Probe)
-------
-아래 작성 필요
-------
+
 # 분석/설계
 
 
@@ -487,78 +482,99 @@ server:
 ![image](https://user-images.githubusercontent.com/47212652/123190392-6c4ee180-d4da-11eb-9f5d-b81b90cb844e.png)
 ## 동기식 호출 과 Fallback 처리
 
-분석단계에서의 조건 중 하나로 Conference -> Pay 간의 호출은 동기식 일관성을 유지하는 트랜잭션으로 처리하기로 하였다. 호출 프로토콜은 이미 앞서 Rest Repository 에 의해 노출되어있는 REST 서비스를 FeignClient 를 이용하여 호출하도록 한다. 
+분석단계에서의 조건 중 하나로 Vaccine -> Hospital 간의 호출은 동기식 일관성을 유지하는 트랜잭션으로 처리하기로 하였다. 호출 프로토콜은 이미 앞서 Rest Repository 에 의해 노출되어있는 REST 서비스를 FeignClient 를 이용하여 호출하도록 한다. 
 
-- 결제서비스를 호출하기 위하여 Stub과 (FeignClient) 를 이용하여 Service 대행 인터페이스 (Proxy) 를 구현 
+- 병원서비스를 호출하기 위하여 FeignClient를 이용하여 Service 대행 인터페이스 (Proxy) 를 구현 
 
 > Pay 서비스의 external\PayService.java
 
 ```java
-package hifive.external;
+package vaccinereservation.external;
 
-@FeignClient(name="pay", url="http://pay:8080")
-public interface PayService {
+import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import java.util.Map;
+import java.util.Date;
 
-    @RequestMapping(method= RequestMethod.GET, path="/pays/paid")
-    public Map<String,String> paid(@RequestParam("status") String status, @RequestParam("conferenceId") Long conferenceId, @RequestParam("roomNumber") Long roomNumber);
+@FeignClient(name="Hospital", url="http://localhost:8083")
+public interface HospitalService {
+
+    @RequestMapping(method= RequestMethod.GET, path="/hospitals/assignHospital")
+    public Map<String,String> assignHospital(@RequestParam("vaccineType") Long vaccineType, @RequestParam("vaccineId") Long vaccineId, @RequestParam("reservationId") Long reservationId);
 }
 ```
 
-- 예약을 받은 직후(@PostPersist) 결제를 요청하도록 처리
+- 예약을 받고, PolicyHandler에서 할당가능한 백신 있을 때 업데이트하면서 (@PostUpdate) 병원 할당을 요청하도록 처리
 
-> Conference 서비스의 Conference.java (Entity)
+> Vaccine 서비스의 Vaccine.java (Entity)
 
 ```java
-    @PostPersist //해당 엔티티를 저장한 후
-    public void onPostPersist(){
-    
-        setStatus("CREATED");
-        Applied applied = new Applied();
-        //BeanUtils.copyProperties는 원본객체의 필드 값을 타겟 객체의 필드값으로 복사하는 유틸인데, 필드이름과 타입이 동일해야함.
-        applied.setConferenceId(this.getConferenceId());
-        applied.setConferenceStatus(this.getStatus());
-        applied.setRoomNumber(this.getRoomNumber());
-        applied.publishAfterCommit();
-        //신청내역이 카프카에 올라감
-        try {
-            // 결제 서비스 Request
-            Map<String, String> res = ConferenceApplication.applicationContext
-                    .getBean(hifive.external.PayService.class)
-                    .paid(applied);
-            //결제 아이디가 있고, 결제 상태로 돌아온 경우 회의 상태로 결제로 바꾼다.
-            if (res.get("status").equals("Req_complete")) {
-                this.setStatus("Req complete");
-            }
-            this.setPayId(Long.valueOf(res.get("payid")));
-            ConferenceApplication.applicationContext.getBean(javax.persistence.EntityManager.class).flush();
-            return;
+    @PostUpdate
+    public void onPostUpdate(){
+        //백신 할당 시 Request 보내고 가서 백신있는 병원 찾고 Response 받음
+        if(this.status.equals("ASSIGNED")){
+            String hospitalStatus = "";
+            String hospitalId = "";
+            String vaccineStatus =this.status;
+            try {
+                Map<String,String> res = VaccineApplication.applicationContext
+                                                           .getBean(vaccinereservation.external.HospitalService.class)
+                                                           .assignHospital(this.getType(),this.getId(),this.getReservationId());
+
+                hospitalStatus = res.get("status")==null?"":res.get("status");
+                hospitalId = res.get("hospitalId").equals("-1")?"-1":res.get("hospitalId");
+                if(hospitalStatus.equals("EMPTYVACCINE")){
+                    vaccineStatus = "CANTAPPLY";
+                }else if(hospitalStatus.equals("ASSIGNED")){
+                    vaccineStatus = "ASSIGNED";
+                }
+                System.out.println("백신상태 : "+vaccineStatus);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }    
+        
+            VaccineAssigned vaccineAssigned = new VaccineAssigned();
+            vaccineAssigned.setVaccineId(this.id);
+            vaccineAssigned.setVaccineName(this.name);
+            vaccineAssigned.setVaccineType(this.type);
+            vaccineAssigned.setVaccineStatus(vaccineStatus);
+            vaccineAssigned.setVaccineDate(this.date);
+            vaccineAssigned.setVaccineValidationDate(this.validationDate);
+            vaccineAssigned.setReservationId(this.reservationId);
+            vaccineAssigned.setReservationStatus(vaccineStatus);
+            vaccineAssigned.setHospitalId(Long.valueOf(hospitalId)); 
+            vaccineAssigned.publishAfterCommit();
         }
-        catch (Exception e) {
-            System.out.println(e);
-        }
+        ...
     }
 ```
 
-- 동기식 호출에서는 호출 시간에 따른 타임 커플링이 발생하며, 결제 시스템이 장애가 나면 예약도 못받는다는 것을 확인:
+- 동기식 호출에서는 호출 시간에 따른 타임 커플링이 발생하며, 병원 시스템이 장애가 나면 백신할당도 못받는다는 것을 확인:
 
 
 ```
-# 결제 (pay) 서비스를 잠시 내려놓음 (ctrl+c)
+# 병원 (hospital) 서비스를 잠시 내려놓음 (ctrl+c)
 
-# 결제 처리
-http post http://localhost:8081/conferences status="" payId=0 roomNumber=1   #Fail
-http post http://localhost:8081/conferences status="" payId=0 roomNumber=2   #Fail
+# 예약 신청 처리 (예약신청 시 -> 할당가능한 백신 찾고 그 백신 있는 병원 할당)
+http POST http://localhost:8081/reservations date=2021-06-20 userName=check userPhone=010-1234-5678 status=APPLYED # Fail
+
 ```
-> 결제 요청 오류 발생
-![Cap 2021-06-07 22-24-26-184](https://user-images.githubusercontent.com/80938080/121024411-28bc5e00-c7df-11eb-9a84-d3095683d49c.png)
+> 병원 할당 요청 오류 발생
+![image](https://user-images.githubusercontent.com/47212652/123200262-53026100-d4eb-11eb-8ace-cad49674d9d1.png)
 ```
-#결제서비스 재기동
-cd pay
+#병원서비스 재기동
+cd hospital
 mvn spring-boot:run
 
-#주문처리
-http post http://localhost:8081/conferences status="" payId=0 roomNumber=1   #Success
-http post http://localhost:8081/conferences status="" payId=0 roomNumber=2   #Success
+http POST http://localhost:8088/hospitals name=samsung location=gangnam status=PERSIST
+http PATCH http://localhost:8088/hospitals/1 vaccineType=1 vaccineName=moderna vaccineCount=100 status=MODIFIED
+http POST http://localhost:8088/vaccines name=moderna type=1 date=2021-06-01 validationDate=2022-05-31 status=CANUSE
+
+#예약 처리
+http POST http://localhost:8088/reservations date=2021-06-20 userName=check userPhone=010-1234-5678 status=APPLYED # Success
 ```
 
 - 또한 과도한 요청시에 서비스 장애가 도미노 처럼 벌어질 수 있다. (서킷브레이커, 폴백 처리는 운영단계에서 설명한다.)
@@ -567,12 +583,12 @@ http post http://localhost:8081/conferences status="" payId=0 roomNumber=2   #Su
 ## 비동기식 호출 / 시간적 디커플링 / 장애격리 / 최종 (Eventual) 일관성 테스트
 
 
-결제가 이루어진 후에 회의실 관리(Room)로 이를 알려주는 행위는 동기식이 아니라 비동기식으로 처리하여 회의실 관리 서비스의 처리를 위하여 결제가 블로킹 되지 않아도록 처리한다.
+예약신청이 이루어진 후에 백신 할당(Vaccine)으로 이를 알려주는 행위는 동기식이 아니라 비동기식으로 처리하여 예약 신청 서비스의 처리를 위하여 백신 할당이 블로킹 되지 않아도록 처리한다.
  
-- 이를 위하여 결제이력에 기록을 남긴 후에 곧바로 결제승인이 되었다는 도메인 이벤트를 카프카로 송출한다(Publish)
+- 이를 위하여 예약신청이력을 기록을 남긴 후에 곧바로 결제승인이 되었다는 도메인 이벤트를 카프카로 송출한다(Publish)
  
 ```java
-package hifive;
+package vaccinereservation;
 
 import javax.persistence.*;
 import org.springframework.beans.BeanUtils;
@@ -580,98 +596,105 @@ import java.util.List;
 import java.util.Date;
 
 @Entity
-@Table(name="Pay_table")
-public class Pay {
+@Table(name="Reservation_table")
+public class Reservation {
 
     @Id
     @GeneratedValue(strategy=GenerationType.AUTO)
-    private Long payId;
-    private String status;
-    private Long conferenceId;
-    private Long roomNumber;
+    private Long id;
+    private Date date;
+    private String status;  //예약신청 APPLYED / 예약취소 CANCELED / 예약완료 COMPLETED / 예약불가 CANTAPPLY
+    private String userName;
+    private String userPhone;
+    private Long vaccineId;
+    private Long hospitalId;
 
     @PostPersist
     public void onPostPersist(){
-
-        if (this.getStatus() != "PAID") return;
-
-        System.out.println("********************* Pay PostPersist Start. PayStatus=" + this.getStatus());
-
-        Paid paid = new Paid();
-        paid.setPayId(this.payId);
-        paid.setPayStatus(this.status);
-        paid.setConferenceId(this.conferenceId);
-        paid.setRoomNumber(this.roomNumber);
-        //BeanUtils.copyProperties(this, paid);
-        paid.publishAfterCommit();
-
-        try {
-            Thread.currentThread().sleep((long) (400 + Math.random() * 220));
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        System.out.println(toString());
-        System.out.println("********************* Pay PostPersist End.");
+        VaccineReserved vaccineReserved = new VaccineReserved();
+        vaccineReserved.setReservationId(this.id);
+        vaccineReserved.setReservationStatus(this.status);
+        vaccineReserved.setUserName(this.userName);
+        vaccineReserved.setUserPhone(this.userPhone);
+        vaccineReserved.setHospitalId(this.hospitalId);
+        vaccineReserved.setReservationDate(this.date);
+        vaccineReserved.publishAfterCommit();
     }
-
+   ...
 }
 ```
-- 상점 서비스에서는 결제승인 이벤트에 대해서 이를 수신하여 자신의 정책을 처리하도록 PolicyHandler 를 구현한다:
+- 백신 서비스에서는 예약신청 이벤트에 대해서 이를 수신하여 자신의 정책을 처리하도록 PolicyHandler 를 구현한다:
 
 ```java
-package hifive;
+package vaccinereservation;
+
+import vaccinereservation.config.kafka.KafkaProcessor;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.stream.annotation.StreamListener;
+import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.stereotype.Service;
 
 @Service
-public class PolicyHandler {
-    @Autowired
-    RoomRepository roomRepository;
+public class PolicyHandler{
+    @Autowired VaccineRepository vaccineRepository;
 
     @StreamListener(KafkaProcessor.INPUT)
-    public void wheneverPaid_RoomAssign(@Payload Paid paid) {
+    public void wheneverVaccineReserved_ReserveVaccine(@Payload VaccineReserved vaccineReserved){
 
-        if (!paid.validate()) {
-            System.out.println("##### listener RoomAssign Fail");
-            return;
-        } else {
-            System.out.println("\n\n##### listener RoomAssign : " + paid.toJson() + "\n\n");
+        if(!vaccineReserved.validate()) return;
 
-            //예약 신청한 방 번호 조회, 퇴실 개념이 없기 때문에 상태 검사 하지 않음
-            Optional<Room> optionalRoom = roomRepository.findById(paid.getRoomNumber());
+        System.out.println("\n\n##### listener ReserveVaccine : " + vaccineReserved.toJson() + "\n\n");
 
-            Room room = optionalRoom.get();
-            room.setRoomStatus("FULL");
-            room.setUsedCount(room.getUsedCount() + 1);
-            room.setConferenceId(paid.getConferenceId());
-            room.setPayId(paid.getPayId());
+        // Sample Logic //
+        Vaccine vaccine;
+        boolean check = false;
 
-            System.out.println("##### 방배정 확인");
-            System.out.println("[ RoomStatus : " + room.getRoomStatus() + ", RoomNumber : " + room.getRoomNumber() + ", UsedCount : " + room.getUsedCount() + ", ConferenceId : " + room.getConferenceId() + "," + room.getPayId() + "]");
-            roomRepository.save(room);
+        final Iterable<Vaccine> list = vaccineRepository.findAll();
+        //사용가능한 백신을 찾아서 할당
+        for(Vaccine v : list){
+            if(v.getStatus().equals("CANUSE")){
+                vaccine = v;
+                vaccine.setStatus("ASSIGNED");
+                vaccine.setReservationId(vaccineReserved.getReservationId());
+                vaccine.setUserName(vaccineReserved.getUserName());
+                vaccine.setUserPhone(vaccineReserved.getUserPhone());
+                vaccine.setHospitalId(vaccineReserved.getHospitalId()); 
+                check = true;
+                vaccineRepository.save(vaccine);
+                break;
+            }
         }
+        if(!check){ //백신이 없어서 신청 불가한 경우
+            Vaccine cantVaccine = new Vaccine();
+            cantVaccine.setStatus("CANTUSE");
+            cantVaccine.setReservationId(vaccineReserved.getReservationId());
+            vaccineRepository.save(cantVaccine);
+        }
+             
     }
+    ...
 }
 
 ```
 
-
-회의실 관리 시스템은 주문/결제와 완전히 분리되어있으며, 이벤트 수신에 따라 처리되기 때문에, 회의실 관리 시스템이 유지보수로 인해 잠시 내려간 상태라도 신청을 받는데 문제가 없다:
+예약관리 시스템은 백신관리 시스템과 완전히 분리되어있으며, 이벤트 수신에 따라 처리되기 때문에, 백신 관리 시스템이 유지보수로 인해 잠시 내려간 상태라도 신청을 받는데 문제가 없다:
 ```
-# 회의실 관리 시스템 (Room) 를 잠시 내려놓음 (ctrl+c)
+# 백신 관리 시스템 (Vaccine) 를 잠시 내려놓음 (ctrl+c)
 
 #신청 처리
-http post http://localhost:8081/conferences status="" payId=0 roomNumber=1   #Success
-http post http://localhost:8081/conferences status="" payId=0 roomNumber=2   #Success
+http POST http://localhost:8081/reservations date=2021-06-21 userName=tester userPhone=010-1234-5679 status=APPLYED   #Success
 
 #신청 상태 확인
-http localhost:8080/conferences     # 신청 상태 안바뀜 확인
+http GET http://localhost:8088/reservations/1     # 신청 상태. 현재 불가임을 보여줌
+- 인메모리 db이다보니 백신 데이터 자체가 없어져서 불가로 나옴
+- policy handler에서 에러 처리를 위해 신청 가능한 백신이 없음을 고객에게 보여주도록 조치를 해놓았음
 
-#회의실 관리 서비스 기동
-cd room
-mvn spring-boot:run
+- 아래와 같은 이벤트는 명확히 publishing 되어있으므로 잠시 내려가도 신청을 받을 수 있음
+{"eventType":"VaccineReserved","timestamp":"20210624130515","reservationId":2,"reservationStatus":"APPLYED","reservationDate":1624233600000,"userName":"tester","userPhone":"010-1234-5679","hospitalId":null}
 
-#신청 상태 확인
-http localhost:8080/conferences     # 모든 신청의 상태가 "할당됨"으로 확인
+
 ```
 
 

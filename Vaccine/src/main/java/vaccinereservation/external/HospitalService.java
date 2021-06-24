@@ -12,8 +12,6 @@ import java.util.Date;
 @FeignClient(name="Hospital", url="http://localhost:8083")//"http://Hospital:8080")
 public interface HospitalService {
 
-    // @RequestMapping(method= RequestMethod.GET, path="/hospitals")
-    // public void assignHospital(@RequestBody Hospital hospital);
     @RequestMapping(method= RequestMethod.GET, path="/hospitals/assignHospital")
     public Map<String,String> assignHospital(@RequestParam("vaccineType") Long vaccineType, @RequestParam("vaccineId") Long vaccineId, @RequestParam("reservationId") Long reservationId);
 }
