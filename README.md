@@ -585,7 +585,7 @@ http POST http://localhost:8088/reservations date=2021-06-20 userName=check user
 
 예약신청이 이루어진 후에 백신 할당(Vaccine)으로 이를 알려주는 행위는 동기식이 아니라 비동기식으로 처리하여 예약 신청 서비스의 처리를 위하여 백신 할당이 블로킹 되지 않아도록 처리한다.
  
-- 이를 위하여 예약신청이력을 기록을 남긴 후에 곧바로 결제승인이 되었다는 도메인 이벤트를 카프카로 송출한다(Publish)
+- 이를 위하여 예약신청이력을 기록을 남긴 후에 곧바로 백신신청이 되었다는 도메인 이벤트를 카프카로 송출한다(Publish)
  
 ```java
 package vaccinereservation;
