@@ -175,16 +175,16 @@
 분석/설계 단계에서 도출된 헥사고날 아키텍처에 따라, 각 Bounded Context별로 마이크로서비스들을 스프링부트로 구현하였다. 구현한 각 서비스를 로컬에서 실행하는 방법은 아래와 같다. (각 서비스의 포트넘버는 8081 ~ 8084, 8088 이다)
 
 ```
-cd conference
+cd Reservation
 mvn spring-boot:run
 
-cd pay
+cd Vaccine
 mvn spring-boot:run 
 
-cd room
+cd Hospital
 mvn spring-boot:run  
 
-cd customerCenter
+cd CustomerCenter
 mvn spring-boot:run 
 
 cd gateway
@@ -195,113 +195,101 @@ mvn spring-boot:run
 
 - msaez.io에서 이벤트스토밍을 통해 DDD를 작성하고 Aggregate 단위로 Entity를 선언하여 구현을 진행하였다.
 
-> Conference 서비스의 Conference.java
+> Reservation 서비스의 Reservation.java
 ```java
-package hifive;
+package vaccinereservation;
 
-import java.util.Optional;
-import javax.annotation.PostConstruct;
 import javax.persistence.*;
-
-import java.util.Map;
+import org.springframework.beans.BeanUtils;
+import java.util.List;
+import java.util.Date;
 
 @Entity
-@Table(name="Conference_table")
-public class Conference{
+@Table(name="Reservation_table")
+public class Reservation {
 
-  @Id
-  @GeneratedValue(strategy=GenerationType.AUTO)
-  private Long conferenceId;
-  private String status;
-  private Long payId;
-  private Long roomNumber;
+    @Id
+    @GeneratedValue(strategy=GenerationType.AUTO)
+    private Long id;
+    private Date date;
+    private String status;  //예약신청 APPLYED / 예약취소 CANCELED / 예약완료 COMPLETED / 예약불가 CANTAPPLY
+    private String userName;
+    private String userPhone;
+    private Long vaccineId;
+    private Long hospitalId;
 
-  @PrePersist //해당 엔티티를 저장한 후
-  public void onPrePersist(){
-      
-    setStatus("CREATED");
-    Applied applied = new Applied();
-    //BeanUtils.copyProperties는 원본객체의 필드 값을 타겟 객체의 필드값으로 복사하는 유틸인데, 필드이름과 타입이 동일해야함.
-    applied.setConferenceId(this.getConferenceId());
-    applied.setConferenceStatus(this.getStatus());
-    applied.setRoomNumber(this.getRoomNumber());
-    applied.publishAfterCommit();
-    //신청내역이 카프카에 올라감
-    
-    Map<String, String> res = ConferenceApplication.applicationContext
-            .getBean(hifive.external.PayService.class)
-            .paid(applied);
-    //결제 아이디가 있고, 결제 상태로 돌아온 경우 회의 상태로 결제로 바꾼다.
-    if (res.get("status").equals("Req_complete")) {
-      this.setStatus("Req complete");
+    @PostPersist
+    public void onPostPersist(){
+        VaccineReserved vaccineReserved = new VaccineReserved();
+        vaccineReserved.setReservationId(this.id);
+        vaccineReserved.setReservationStatus(this.status);
+        vaccineReserved.setUserName(this.userName);
+        vaccineReserved.setUserPhone(this.userPhone);
+        vaccineReserved.setHospitalId(this.hospitalId);
+        vaccineReserved.setReservationDate(this.date);
+        vaccineReserved.publishAfterCommit();
     }
-    this.setPayId(Long.valueOf(res.get("payid")));
 
-    return;
-  }
+    @PostUpdate
+    public void onPostUpdate(){
+        if(this.getStatus().equals("CANCELED")){
+            CanceledVaccineReservation canceledVaccineReservation = new CanceledVaccineReservation();
+            canceledVaccineReservation.setReservationId(this.id);
+            canceledVaccineReservation.setReservationStatus(this.status);
+            canceledVaccineReservation.setVaccineId(this.vaccineId);
+            canceledVaccineReservation.setHospitalId(this.hospitalId);
+            canceledVaccineReservation.publishAfterCommit();
+        }
+    }
 
-  @PreRemove //해당 엔티티를 삭제하기 전 (회의를 삭제하면 취소신청 이벤트 생성)
-  public void onPreRemove(){
-    System.out.println("#################################### PreRemove : ConferenceId=" + this.getConferenceId());
-    ApplyCanceled applyCanceled = new ApplyCanceled();
-    applyCanceled.setConferenceId(this.getConferenceId());
-    applyCanceled.setConferenceStatus("CANCELED");
-    applyCanceled.setPayId(this.getPayId());
-    applyCanceled.publishAfterCommit();
-    //삭제하고 ApplyCanceled 이벤트 카프카에 전송
-  }
+    public Long getId()                         {        return id;                         }
+    public void setId(Long id)                  {        this.id = id;                      }     
+    public Date getDate()                       {        return date;                       }
+    public void setDate(Date date)              {        this.date = date;                  }
+    public String getStatus()                   {        return status;                     }
+    public void setStatus(String status)        {        this.status = status;              }
+    public String getUserName()                 {        return userName;                   }
+    public void setUserName(String userName)    {        this.userName = userName;          }
+    public String getUserPhone()                {        return userPhone;                  }
+    public void setUserPhone(String userPhone)  {        this.userPhone = userPhone;        }
+    public Long getVaccineId()                  {        return vaccineId;                  }
+    public void setVaccineId(Long vaccineId)    {        this.vaccineId = vaccineId;        }
+    public Long getHospitalId()                 {        return hospitalId;                 }
+    public void setHospitalId(Long hospitalId)  {        this.hospitalId = hospitalId;      }
 
-  public Long getConferenceId() {
-    return conferenceId;
-  }
-  public void setConferenceId(Long conferenceId) {
-    this.conferenceId = conferenceId;
-  }
+    @Override
+	public String toString() {
+		return "Reservation [id=" + id + ", date=" + date + ", status=" + status + ", userName=" + userName
+				+ ", userPhone=" + userPhone + ", vaccineId=" + vaccineId + ", hospitalId=" + hospitalId + "]";
+	}
 
-  public String getStatus() {
-    return status;
-  }
-  public void setStatus(String status) {
-    this.status = status;
-  }
-
-  public Long getPayId() {
-    return payId;
-  }
-  public void setPayId(Long payId) {
-    this.payId = payId;
-  }
-
-  public Long getRoomNumber() {
-    return roomNumber;
-  }
-  public void setRoomNumber(Long roomNumber) {
-    this.roomNumber = roomNumber;
-  }
 }
+
 
 ```
 
 - Entity Pattern 과 Repository Pattern 을 적용하여 JPA 기반의 다양한 데이터소스 유형 (RDB or NoSQL) 에 대한 별도의 처리 없이 데이터 접근 어댑터를 자동 생성하기 위하여 Spring Data REST 의 RestRepository 를 적용하였다.
 
-> Conference 서비스의 ConferenceRepository.java
+> Reservation 서비스의 ReservationRepository.java
 ```java
-package hifive;
+package vaccinereservation;
 
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.data.rest.core.annotation.RepositoryRestResource;
 
-@RepositoryRestResource(collectionResourceRel="conferences", path="conferences")
-public interface ConferenceRepository extends PagingAndSortingRepository<Conference, Long>{
+@RepositoryRestResource(collectionResourceRel="reservations", path="reservations")
+public interface ReservationRepository extends PagingAndSortingRepository<Reservation, Long>{
 
 }
 ```
-> Conference 서비스의 PolicyHandler.java
+> Reservation 서비스의 PolicyHandler.java
 ```java
-package hifive;
+package vaccinereservation;
+
+import vaccinereservation.config.kafka.KafkaProcessor;
 
 import java.util.Optional;
-import hifive.config.kafka.KafkaProcessor;
+
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -311,48 +299,96 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class PolicyHandler{
-    @Autowired ConferenceRepository conferenceRepository;
+    @Autowired ReservationRepository reservationRepository;
 
     @StreamListener(KafkaProcessor.INPUT)
-    public void wheneverAssigned_UpdateStatus(@Payload Assigned assigned){
-    
-        if(!assigned.validate()) return;
-        
-        Optional<Conference> confOptional = conferenceRepository.findById(assigned.getConferenceId());
-        Conference conference = confOptional.get();
-        conference.setPayId(assigned.getPayId());
-        conference.setStatus(assigned.getRoomStatus());
-        conferenceRepository.save(conference);
+    public void wheneverCanceledVaccineAssigned_UpdateedReservationStatus(@Payload CanceledVaccineAssigned canceledVaccineAssigned){
+
+        if(!canceledVaccineAssigned.validate()) return;
+
+        System.out.println("\n\n##### listener UpdateedReservationStatus : " + canceledVaccineAssigned.toJson() + "\n\n");
+        Optional<Reservation> optional = reservationRepository.findById(canceledVaccineAssigned.getReservationId());
+        Reservation reservation = optional.get();
+        if(canceledVaccineAssigned.getReservationStatus().equals("CANTAPPLY")){
+            //신청 불가 - 이미 불가인 상태라서.
+            reservation.setStatus("CANTAPPLY");
+        }
+        else{
+            reservation.setStatus("CANCELED");
+        }
+        reservationRepository.save(reservation);
+            
+    }
+    @StreamListener(KafkaProcessor.INPUT)
+    public void wheneverVaccineAssigned_UpdateedReservationStatus(@Payload VaccineAssigned vaccineAssigned){
+
+        if(!vaccineAssigned.validate()) return;
+
+        System.out.println("\n\n##### listener UpdateedReservationStatus : " + vaccineAssigned.toJson() + "\n\n");       
+        Optional<Reservation> optional = reservationRepository.findById(vaccineAssigned.getReservationId());
+        Reservation reservation = optional.get();
+        //할당 받은 경우, 백신 및 병원 정보 업데이트
+        if(vaccineAssigned.getVaccineStatus().equals("ASSIGNED")){
+            reservation.setStatus("COMPLETED");
+            reservation.setVaccineId(vaccineAssigned.getVaccineId());
+            reservation.setHospitalId(vaccineAssigned.getHospitalId());
+            //있었다면 세팅이 되는 것
+        }//백신 있는 병원이 없어서 불가한 경우
+        else if(vaccineAssigned.getVaccineStatus().equals("CANTAPPLY")){
+            reservation.setStatus("CANTAPPLY");
+        }
+        reservationRepository.save(reservation); //예약이 업데이트 됨          
     }
 }
+
 ```
 
 - 적용 후 REST API 의 테스트
-```
-# conference 서비스의 회의실 신청
-http post http://localhost:8081/conferences status="" payId=0 roomNumber=1
+```cmd
+// 병원 정보 등록
+http POST http://localhost:8083/hospitals name=samsung location=gangnam status=PERSIST
 
-# conference 서비스의 회의실 신청 취소
-http delete http://localhost:8081/conferences/1
+// 병원 정보 수정
+http PATCH http://localhost:8083/hospitals/1 vaccineType=1 vaccineName=moderna vaccineCount=100 status=MODIFIED
 
-# 회의실 상태 확인
-http GET http://localhost:8084/roomStates
+//백신 정보 등록
+http POST http://localhost:8082/vaccines name=moderna type=1 date=2021-06-01 validationDate=2022-05-31 status=CANUSE
+
+//예약 신청
+http POST http://localhost:8081/reservations date=2021-06-20 userName=check userPhone=010-1234-5678 status=APPLYED
+
+// 확인
+http GET http://localhost:8081/reservations/1
+http GET http://localhost:8082/vaccines/1
+http GET http://localhost:8083/hospitals/1
+http GET http://localhost:8084/reservationStatuses/1
+
+// 예약 취소
+http PATCH http://localhost:8081/reservations/1 status=CANCELED
+
+// 확인
+http GET http://localhost:8081/reservations/1
+http GET http://localhost:8082/vaccines/1
+http GET http://localhost:8083/hospitals/1
+http GET http://localhost:8084/reservationStatuses/1
 ```
-> 회의실 신청 후 Conference 동작 결과
-![Cap 2021-06-07 21-39-53-966](https://user-images.githubusercontent.com/80938080/121018071-f60f6700-c7d8-11eb-889d-fb674d1e8189.png)
+
+> 백신 예약 신청 후 Reservation 동작 결과
+![image](https://user-images.githubusercontent.com/47212652/123189901-97850100-d4d9-11eb-8155-3bb04e8cdc5c.png)
+![image](https://user-images.githubusercontent.com/47212652/123189958-af5c8500-d4d9-11eb-9076-71b07a8e76f1.png)
 
 ## CQRS
 
 - Materialized View 구현을 통해 다른 마이크로서비스의 데이터 원본에 접근없이 내 서비스의 화면 구성과 잦은 조회가 가능하게 하였습니다. 본 과제에서 View 서비스는 CustomerCenter 서비스가 수행하며 회의실 상태를 보여준다.
 
-> 회의실 신청 후 customerCenter 결과
-![Cap 2021-06-07 22-08-17-580](https://user-images.githubusercontent.com/80938080/121022024-edb92b00-c7dc-11eb-872b-23b51f1b1d57.png)
+> 백신 예약 신청 후 customerCenter 결과(백신 할당된 상태)
+![image](https://user-images.githubusercontent.com/47212652/123190050-d31fcb00-d4d9-11eb-8e52-bff822df7eb9.png)
 
 ## 폴리글랏 퍼시스턴스
 
-- 회의(conference)의 경우 H2 DB인 결제(pay)/회의실(room) 서비스와 달리 Hsql로 구현하여 MSA의 서비스간 서로 다른 종류의 DB에도 문제없이 동작하여 다형성을 만족하는지 확인하였다.
+- 예약(Reservation)의 경우 H2 DB인 백신(Vaccine)/병원(Hospital) 서비스와 달리 Hsqldb로 구현하여 MSA의 서비스간 서로 다른 종류의 DB에도 문제없이 동작하여 다형성을 만족하는지 확인하였다.
 
-> pay, room 서비스의 pom.xml 설정
+> Vaccine, Hospital, CustomerCenter 서비스의 pom.xml 설정
 ```xml
     <dependency>
         <groupId>com.h2database</groupId>
@@ -360,7 +396,7 @@ http GET http://localhost:8084/roomStates
         <scope>runtime</scope>
     </dependency>
 ```
-> conference 서비스의 pom.xml 설정
+> Reservation 서비스의 pom.xml 설정
 ```xml
     <dependency>
         <groupId>org.hsqldb</groupId>
@@ -370,29 +406,68 @@ http GET http://localhost:8084/roomStates
 ```
 ## Gateway 적용
 - API Gateway를 통하여 마이크로서비스들의 진입점을 단일화하였습니다.
-> gateway > application.xml 설정
+> gateway > application.yaml 설정
 ```yaml
+server:
+  port: 8088
+
+---
+
+spring:
+  profiles: default
+  cloud:
+    gateway:
+      routes:
+        - id: Reservation
+          uri: http://localhost:8081
+          predicates:
+            - Path=/reservations/** 
+        - id: Vaccine
+          uri: http://localhost:8082
+          predicates:
+            - Path=/vaccines/** 
+        - id: Hospital
+          uri: http://localhost:8083
+          predicates:
+            - Path=/hospitals/** 
+        - id: CustomerCenter
+          uri: http://localhost:8084
+          predicates:
+            - Path= /reservationStatuses/**
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins:
+              - "*"
+            allowedMethods:
+              - "*"
+            allowedHeaders:
+              - "*"
+            allowCredentials: true
+
+---
+
 spring:
   profiles: docker
   cloud:
     gateway:
       routes:
-        - id: conference
-          uri: http://conference:8080
+        - id: Reservation
+          uri: http://Reservation:8080
           predicates:
-            - Path=/conferences/** 
-        - id: pay
-          uri: http://pay:8080
+            - Path=/reservations/** 
+        - id: Vaccine
+          uri: http://Vaccine:8080
           predicates:
-            - Path=/pays/** 
-        - id: room
-          uri: http://room:8080
+            - Path=/vaccines/** 
+        - id: Hospital
+          uri: http://Hospital:8080
           predicates:
-            - Path=/rooms/** 
-        - id: customerCenter
-          uri: http://customerCenter:8080
+            - Path=/hospitals/** 
+        - id: CustomerCenter
+          uri: http://CustomerCenter:8080
           predicates:
-            - Path= /roomStates/**
+            - Path= /reservationStatuses/**
       globalcors:
         corsConfigurations:
           '[/**]':
@@ -407,7 +482,9 @@ spring:
 server:
   port: 8080
 ```
+- 단일화 된 진입점 8088포트로 진입함을 확인할 수 있습니다.
 
+![image](https://user-images.githubusercontent.com/47212652/123190392-6c4ee180-d4da-11eb-9f5d-b81b90cb844e.png)
 ## 동기식 호출 과 Fallback 처리
 
 분석단계에서의 조건 중 하나로 Conference -> Pay 간의 호출은 동기식 일관성을 유지하는 트랜잭션으로 처리하기로 하였다. 호출 프로토콜은 이미 앞서 Rest Repository 에 의해 노출되어있는 REST 서비스를 FeignClient 를 이용하여 호출하도록 한다. 

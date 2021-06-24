@@ -19,13 +19,10 @@ public class PolicyHandler{
     public void wheneverCanceledVaccineAssigned_UpdateedReservationStatus(@Payload CanceledVaccineAssigned canceledVaccineAssigned){
 
         if(!canceledVaccineAssigned.validate()) return;
+
         System.out.println("\n\n##### listener UpdateedReservationStatus : " + canceledVaccineAssigned.toJson() + "\n\n");
         Optional<Reservation> optional = reservationRepository.findById(canceledVaccineAssigned.getReservationId());
         Reservation reservation = optional.get();
-        System.out.println("--------------------------------");
-        System.out.println("Reservation : "+reservation);
-        System.out.println("--------------------------------");
-        //여기도 상태 나눠서 CANTAPPLY랑 CANCELED로 나눠서 처리
         if(canceledVaccineAssigned.getReservationStatus().equals("CANTAPPLY")){
             //신청 불가 - 이미 불가인 상태라서.
             reservation.setStatus("CANTAPPLY");
@@ -41,9 +38,7 @@ public class PolicyHandler{
 
         if(!vaccineAssigned.validate()) return;
 
-        System.out.println("\n\n##### listener UpdateedReservationStatus : " + vaccineAssigned.toJson() + "\n\n");
-      
-        
+        System.out.println("\n\n##### listener UpdateedReservationStatus : " + vaccineAssigned.toJson() + "\n\n");       
         Optional<Reservation> optional = reservationRepository.findById(vaccineAssigned.getReservationId());
         Reservation reservation = optional.get();
         //할당 받은 경우, 백신 및 병원 정보 업데이트
@@ -55,11 +50,7 @@ public class PolicyHandler{
         }//백신 있는 병원이 없어서 불가한 경우
         else if(vaccineAssigned.getVaccineStatus().equals("CANTAPPLY")){
             reservation.setStatus("CANTAPPLY");
-            //id는 -1이고..
         }
-        reservationRepository.save(reservation); //예약이 업데이트 됨
-            
+        reservationRepository.save(reservation); //예약이 업데이트 됨          
     }
-
-
 }

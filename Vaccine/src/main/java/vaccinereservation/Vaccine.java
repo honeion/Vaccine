@@ -48,18 +48,12 @@ public class Vaccine {
 
     @PostUpdate
     public void onPostUpdate(){
-        //여기 상태별로 if else하면 되겠다.
-        
-        //Following code causes dependency to external APIs
-        // it is NOT A GOOD PRACTICE. instead, Event-Policy mapping is recommended.
-        //백신 할당 시 Request 보내고 가서 백신있는 병원 찾고 상태값(할당가능/불가능), 수량, 체크해서 가져오고
+        //백신 할당 시 Request 보내고 가서 백신있는 병원 찾고 상태값(할당가능/불가능), 수량, 체크
         if(this.status.equals("ASSIGNED")){
             String hospitalStatus = "";
             String hospitalId = "";
             String vaccineStatus =this.status;
             try {
-                //vaccinereservation.external.Hospital hospital = new vaccinereservation.external.Hospital();
-                //Application.applicationContext.getBean(vaccinereservation.external.HospitalService.class).assignHospital(hospital);
                 Map<String,String> res = VaccineApplication.applicationContext
                                                            .getBean(vaccinereservation.external.HospitalService.class)
                                                            .assignHospital(this.getType(),this.getId(),this.getReservationId());
@@ -75,8 +69,6 @@ public class Vaccine {
                     vaccineStatus = "ASSIGNED";
                 }
                 System.out.println("백신상태 : "+vaccineStatus);
-                //여기까지 잘되는거 확인 완료했고. 이거를 업데이트를 치고나서 cancel 관련된 부분 확인하고 customerCenter 내용 체크하면 기본 시나리오는 완성
-                //내일 새벽까지 또 최대한 해보고 가즈아
             } catch (Exception e) {
                 e.printStackTrace();
             }    
@@ -119,28 +111,28 @@ public class Vaccine {
         }
     }
 
-    public Long getId()                                 {        return id;                                 }
-    public void setId(Long id)                          {        this.id = id;                              }
-    public String getName()                             {        return name;                               }
-    public void setName(String name)                    {        this.name = name;                          }
-    public Long getType()                               {        return type;                               }
-    public void setType(Long type)                      {        this.type = type;                          }
-    public String getStatus()                           {        return status;                             }
-    public void setStatus(String status)                {        this.status = status;                      }
-    public Date getDate()                               {        return date;                               }
-    public void setDate(Date date)                      {        this.date = date;                          }
-    public Date getValidationDate()                     {        return validationDate;                     }
-    public void setValidationDate(Date validationDate)  {        this.validationDate = validationDate;      }
-    public Long getReservationId()                      {        return reservationId;                      }
-    public void setReservationId(Long reservationId)    {        this.reservationId = reservationId;        }
-    public String getReservationStatus()                            {        return reservationStatus;                              }
-    public void setReservationStatus(String reservationStatus)      {        this.reservationStatus = reservationStatus;            }
-    public String getUserName()                         {        return userName;                           }
-    public void setUserName(String userName)            {        this.userName = userName;                  }
-    public String getUserPhone()                        {        return userPhone;                          }
-    public void setUserPhone(String userPhone)          {        this.userPhone = userPhone;                }
-    public Long getHospitalId()                         {        return hospitalId;                         }
-    public void setHospitalId(Long hospitalId)          {        this.hospitalId = hospitalId;              }
+    public Long getId()                                             {        return id;                                 }
+    public void setId(Long id)                                      {        this.id = id;                              }
+    public String getName()                                         {        return name;                               }
+    public void setName(String name)                                {        this.name = name;                          }
+    public Long getType()                                           {        return type;                               }
+    public void setType(Long type)                                  {        this.type = type;                          }
+    public String getStatus()                                       {        return status;                             }
+    public void setStatus(String status)                            {        this.status = status;                      }
+    public Date getDate()                                           {        return date;                               }
+    public void setDate(Date date)                                  {        this.date = date;                          }
+    public Date getValidationDate()                                 {        return validationDate;                     }
+    public void setValidationDate(Date validationDate)              {        this.validationDate = validationDate;      }
+    public Long getReservationId()                                  {        return reservationId;                      }
+    public void setReservationId(Long reservationId)                {        this.reservationId = reservationId;        }
+    public String getReservationStatus()                            {        return reservationStatus;                  }
+    public void setReservationStatus(String reservationStatus)      {        this.reservationStatus = reservationStatus;}
+    public String getUserName()                                     {        return userName;                           }
+    public void setUserName(String userName)                        {        this.userName = userName;                  }
+    public String getUserPhone()                                    {        return userPhone;                          }
+    public void setUserPhone(String userPhone)                      {        this.userPhone = userPhone;                }
+    public Long getHospitalId()                                     {        return hospitalId;                         }
+    public void setHospitalId(Long hospitalId)                      {        this.hospitalId = hospitalId;              }
 
     @Override
 	public String toString() {

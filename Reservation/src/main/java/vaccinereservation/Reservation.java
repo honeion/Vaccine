@@ -5,7 +5,6 @@ import org.springframework.beans.BeanUtils;
 import java.util.List;
 import java.util.Date;
 
-
 @Entity
 @Table(name="Reservation_table")
 public class Reservation {
@@ -43,7 +42,6 @@ public class Reservation {
             canceledVaccineReservation.publishAfterCommit();
         }
     }
-
 
     public Long getId()                         {        return id;                         }
     public void setId(Long id)                  {        this.id = id;                      }     
