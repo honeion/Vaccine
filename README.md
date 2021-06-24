@@ -952,17 +952,48 @@ siege -c100 -t60S -r10 -v --content-type "application/json" 'http://Vaccine:8080
 
 ## ConfigMap
 - 환경정보로 변경 시 ConfigMap으로 설정함
+- Vaccine 서비스에서 사용
+- yaml 파일에 ${configurl} 설정
+```yml
+# Vaccine\src\main\resources\application.yml
+api:
+  url:
+    hospital: ${configurl}
+```
+- 배포시 사용되는 deployment.yml에 configMap 설정
+```yml
+# Vaccine\kubernetes\deployment.yml
+env:
+  - name: configurl
+    valueFrom:
+      configMapKeyRef:
+        name: apiurl
+        key: url
+```
+- 리터럴 값으로부터 ConfigMap 생성 및 정보 확인
+![image](https://user-images.githubusercontent.com/47212652/123309648-276d8e00-d560-11eb-8d52-29742323c58f.png)
 
-- 리터럴 값으로부터 ConfigMap 생성
-![image](https://user-images.githubusercontent.com/81279673/121073309-4ef8f280-c80d-11eb-998e-d13b361d53e4.png)
+- Java 파일에서 configMap에 등록한 정보 사용
+```java
+// Vaccine\src\main\java\vaccinereservation\external\HospitalService.java
+package vaccinereservation.external;
 
-- 설정된 ConfigMap 정보 가져오기
-![image](https://user-images.githubusercontent.com/81279673/121074021-42c16500-c80e-11eb-8db8-2497dcc099e1.png)
-![image](https://user-images.githubusercontent.com/81279673/121073595-a9924e80-c80d-11eb-80e5-88b40effb31b.png)
+import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import java.util.Map;
+import java.util.Date;
 
-- 관련된 프로그램(application.yaml, PayService.java) 적용
-![image](https://user-images.githubusercontent.com/81279673/121073814-fe35c980-c80d-11eb-980b-5dcc1c6d7019.png)
-![image](https://user-images.githubusercontent.com/81279673/121073824-ffff8d00-c80d-11eb-8bda-cc188492d138.png)
+@FeignClient(name="Hospital", url="${api.url.hospital}")//#"http://Hospital:8080")
+public interface HospitalService {
+
+    @RequestMapping(method= RequestMethod.GET, path="/hospitals/assignHospital")
+    public Map<String,String> assignHospital(@RequestParam("vaccineType") Long vaccineType, @RequestParam("vaccineId") Long vaccineId, @RequestParam("reservationId") Long reservationId);
+}
+```
+- 정상적으로 작동함을 확인하였음
 
 ## Zero-downtime deploy (Readiness Probe)
 - Room 서비스에 kubectl apply -f deployment_non_readiness.yml 을 통해 readiness Probe 옵션을 제거하고 컨테이너 상태 실시간 확인
