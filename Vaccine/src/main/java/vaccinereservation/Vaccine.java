@@ -78,7 +78,7 @@ public class Vaccine {
                 //여기까지 잘되는거 확인 완료했고. 이거를 업데이트를 치고나서 cancel 관련된 부분 확인하고 customerCenter 내용 체크하면 기본 시나리오는 완성
                 //내일 새벽까지 또 최대한 해보고 가즈아
             } catch (Exception e) {
-                System.out.println(e.getMessage());
+                e.printStackTrace();
             }    
         
             VaccineAssigned vaccineAssigned = new VaccineAssigned();

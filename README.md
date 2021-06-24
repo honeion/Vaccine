@@ -3,21 +3,39 @@
 # 백신 예약 시스템
 # Table of contents
 
+- [백신 예약 시스템](#백신-예약-시스템)
+- [Table of contents](#table-of-contents)
 - [서비스 시나리오](#서비스-시나리오)
 - [체크포인트](#체크포인트)
+  - [12. Self-healing (Liveness Probe)](#12-self-healing-liveness-probe)
+  - [아래 작성 필요](#아래-작성-필요)
 - [분석/설계](#분석설계)
-- [구현:](#구현-)
-  - [DDD 의 적용](#DDD-의-적용)
+  - [AS-IS 조직 (Horizontally-Aligned)](#as-is-조직-horizontally-aligned)
+  - [TO-BE 조직 (Vertically-Aligned)](#to-be-조직-vertically-aligned)
+  - [Event Storming 결과](#event-storming-결과)
+    - [이벤트 도출](#이벤트-도출)
+    - [액터, 커맨드 부착하여 읽기 좋게](#액터-커맨드-부착하여-읽기-좋게)
+    - [어그리게잇으로 묶기](#어그리게잇으로-묶기)
+    - [바운디드 컨텍스트로 묶기](#바운디드-컨텍스트로-묶기)
+    - [폴리시의 이동과 컨텍스트 매핑 (점선은 Pub/Sub, 실선은 Req/Resp)](#폴리시의-이동과-컨텍스트-매핑-점선은-pubsub-실선은-reqresp)
+    - [기능적 요구사항 검증](#기능적-요구사항-검증)
+    - [비기능 요구사항 검증](#비기능-요구사항-검증)
+    - [완성된 모델](#완성된-모델)
+  - [헥사고날 아키텍처 다이어그램 도출](#헥사고날-아키텍처-다이어그램-도출)
+- [구현:](#구현)
+  - [DDD 의 적용](#ddd-의-적용)
+  - [CQRS](#cqrs)
   - [폴리글랏 퍼시스턴스](#폴리글랏-퍼시스턴스)
-  - [동기식 호출 과 Fallback 처리](#동기식-호출-과-Fallback-처리)
-  - [비동기식 호출 과 Eventual Consistency](#비동기식-호출-과-Eventual-Consistency)
+  - [Gateway 적용](#gateway-적용)
+  - [동기식 호출 과 Fallback 처리](#동기식-호출-과-fallback-처리)
+  - [비동기식 호출 / 시간적 디커플링 / 장애격리 / 최종 (Eventual) 일관성 테스트](#비동기식-호출--시간적-디커플링--장애격리--최종-eventual-일관성-테스트)
 - [운영](#운영)
-  - [CI/CD 설정](#cicd설정)
-  - [동기식 호출 / 서킷 브레이킹 / 장애격리](#동기식-호출-서킷-브레이킹-장애격리)
-  - [오토스케일아웃 (HPA)](#오토스케일아웃_(HPA))
-  - [ConfigMap](#ConfigMap)
-  - [Zero-downtime deploy (Readiness Probe)](#Zero-downtime_deploy_(Readiness_Probe))
-  - [Self-healing (Liveness Probe)](#Self-healing_(Liveness_Probe))
+  - [CI/CD 설정](#cicd-설정)
+  - [동기식 호출 / 서킷 브레이킹 / 장애격리](#동기식-호출--서킷-브레이킹--장애격리)
+  - [오토스케일아웃 (HPA)](#오토스케일아웃-hpa)
+  - [ConfigMap](#configmap)
+  - [Zero-downtime deploy (Readiness Probe)](#zero-downtime-deploy-readiness-probe)
+  - [Self-healing (Liveness Probe)](#self-healing-liveness-probe)
 
 
 # 서비스 시나리오
@@ -73,90 +91,83 @@
 
 
 ## AS-IS 조직 (Horizontally-Aligned)
-![image](https://user-images.githubusercontent.com/81279673/120967847-fee54600-c7a2-11eb-92dc-198f3c1ef19a.png)
+![image](https://user-images.githubusercontent.com/47212652/123186329-da8fa600-d4d2-11eb-8dbb-18708aea4dcd.png)
 
 ## TO-BE 조직 (Vertically-Aligned)
-![image](https://user-images.githubusercontent.com/81279673/120967821-f55bde00-c7a2-11eb-97e5-a3895e1632ce.png)
+![image](https://user-images.githubusercontent.com/47212652/123186353-e9765880-d4d2-11eb-99bd-62475aadffe7.png)
 
 ## Event Storming 결과
 * MSAEZ 모델링한 이벤트스토밍 결과:  http://www.msaez.io/#/storming/pYauKq27pAMMO4ZZcMLRDtjzgIv1/share/40d9c225e0f9826deff3b8035d97b38f
 
 
 ### 이벤트 도출
-![image](https://user-images.githubusercontent.com/81279673/120964712-b3309d80-c79e-11eb-9e12-03e968f6f7fd.png)
-
-### 부적격 이벤트 탈락
-![image](https://user-images.githubusercontent.com/81279673/120964787-cfccd580-c79e-11eb-9746-08b844f44181.png)
-
-    - 이벤트스토밍 과정 중 도출된 잘못된 도메인 이벤트들을 걸러내는 작업을 수행함
-    - 회의실 선택, 취소를 위한 신청건 선택, 결제버튼 선택, 결제버튼 선택은 UI이벤트이므로 대상에서 제외함
+![image](https://user-images.githubusercontent.com/47212652/123186376-f430ed80-d4d2-11eb-8c6d-e1dd84729e02.png)
 
 ### 액터, 커맨드 부착하여 읽기 좋게
-![image](https://user-images.githubusercontent.com/81279673/120964860-effc9480-c79e-11eb-9858-89bf32d3ba2f.png)
+![image](https://user-images.githubusercontent.com/47212652/123186404-03b03680-d4d3-11eb-8852-1e9fb5ba8c2e.png)
 
 ### 어그리게잇으로 묶기
-![image](https://user-images.githubusercontent.com/81279673/120964886-f985fc80-c79e-11eb-837d-1302e29b4e9b.png)
+![image](https://user-images.githubusercontent.com/47212652/123186422-0e6acb80-d4d3-11eb-8a09-11f82e8fff9e.png)
 
-    - 신청, 결제, 회의실 관리 어그리게잇을 생성하고 그와 연결된 command와 event들에 의하여 트랜잭션이 유지되어야 하는 단위로 묶어줌
+    - 예약관리, 백신관리, 병원관리 어그리게잇을 생성하고 그와 연결된 command와 event들에 의하여 트랜잭션이 유지되어야 하는 단위로 묶어줌
 
 ### 바운디드 컨텍스트로 묶기
-![image](https://user-images.githubusercontent.com/81279673/120964904-07d41880-c79f-11eb-9049-88d11fa059a3.png)
-
-    - 도메인 서열 분리 
-        - Core Domain:  conference, room : 없어서는 안될 핵심 서비스이며, 연견 Up-time SLA 수준을 99.999% 목표, 배포주기는 conference 의 경우 1주일 1회 미만, room 의 경우 1개월 1회 미만
-        - Supporting Domain:   customer center : 경쟁력을 내기위한 서비스이며, SLA 수준은 연간 60% 이상 uptime 목표, 배포주기는 각 팀의 자율이나 표준 스프린트 주기가 1주일 이므로 1주일 1회 이상을 기준으로 함.
-        - General Domain:   pay : 결제서비스로 3rd Party 외부 서비스를 사용하는 것이 경쟁력이 높음 (핑크색으로 이후 전환할 예정)
-
-### 폴리시 부착 (괄호는 수행주체, 폴리시 부착을 둘째단계에서 해놔도 상관 없음. 전체 연계가 초기에 드러남)
-![image](https://user-images.githubusercontent.com/81279673/120964924-11f61700-c79f-11eb-9b3a-10cdf6ed50e4.png)
+![image](https://user-images.githubusercontent.com/47212652/123186451-22163200-d4d3-11eb-8a05-4c28132d8d08.png)
 
 ### 폴리시의 이동과 컨텍스트 매핑 (점선은 Pub/Sub, 실선은 Req/Resp)
-![image](https://user-images.githubusercontent.com/81279673/120964957-1c181580-c79f-11eb-8f31-00dd15712190.png)
+![image](https://user-images.githubusercontent.com/47212652/123186733-bb454880-d4d3-11eb-969f-e6e4a77ece18.png)
 
-### 완성된 1차 모형
-![image](https://user-images.githubusercontent.com/81279673/120964986-276b4100-c79f-11eb-9a9a-ed94470edffd.png)
-
-    - View Model 추가
-    - 팀원 중 외국인이 투입되어 유비쿼터스 랭귀지인 영어로 변경함	
+  - 도메인 서열 분리 
+    1. Core Domain(reservation, vaccine) : 없어서는 안될 핵심 서비스이며, 연견 Up-time SLA 수준을 99.999% 목표, 배포주기는 reservatoin 의 경우 1주일 1회 미만, vaccine 의 경우 1개월 1회 미만
+    2. Supporting Domain(customer center) : 경쟁력을 내기위한 서비스이며, SLA 수준은 연간 60% 이상 uptime 목표, 배포주기는 각 팀의 자율이나 표준 스프린트 주기가 1주일 이므로 1주일 1회 이상을 기준으로 함.
+    3. General Domain(hospital) : 병원 정보와 관련된 서비스로 병원들과 협약을 맺은 3rd Party 외부 서비스를 사용하는 것이 경쟁력이 높음 
 
 ### 기능적 요구사항 검증
-![image](https://user-images.githubusercontent.com/81279673/120969885-ab282c00-c7a5-11eb-9dcc-aafb74c4d962.png)
+![image](https://user-images.githubusercontent.com/47212652/123187659-889c4f80-d4d5-11eb-8b7b-47ee13d89f7d.png)
 
-    - 회의실 관리자가 회의실을 등록한다 (ok)
-    - 고객이 회의실을 신청한다. (ok)
-    - 고객이 결제한다 (ok)    
-    - 회의실이 할당되면 회의실 현황이 업데이트 된다 (ok)    
+    - 병원 관리자는 병원정보를 등록한다 (o)
+    - 고객은 백신을 예약한다 (o)
+    - 예약이 되면 백신이 할당된다 (o)
+    - 백신이 할당되면 백신이 있는 병원에 등록되며 예약 현황이 업데이트 된다. (o)
 
-![image](https://user-images.githubusercontent.com/81279673/120969797-9186e480-c7a5-11eb-8582-35a2517616e5.png)
+![image](https://user-images.githubusercontent.com/47212652/123187691-96ea6b80-d4d5-11eb-8de5-b29657f9c2de.png)
 
-    - 고객이 신청을 취소할 수 있다. (ok)
-    - 신청이 취소되면 회의실 할당이 취소된다. (ok)
+    - 고객은 백신 예약을 취소할 수 있다(o)
+    - 예약이 취소되면 백신 할당 및 병원 등록이 취소되며 예약 현황이 업데이트 된다.(o)
+ 
 
 ### 비기능 요구사항 검증
-![image](https://user-images.githubusercontent.com/81279673/120970763-cfd0d380-c7a6-11eb-9a6b-4760792b3815.png)
+![image](https://user-images.githubusercontent.com/47212652/123188194-94d4dc80-d4d6-11eb-9a60-ab9466df212a.png)
 
     - 트랜잭션
-        1. 결제가 되지 않으면 회의실은 신청되지 않는다. `Sync 호출` 
-    - 장애격리
-        2. 회의실 관리 기능이 수행되지 않더라도 신청은 365일 24시간 가능해야 한다. `Async (event-driven)`, `Eventual Consistency`
-        3. 결제시스템이 과중되면 신청을 잠시동안 받지 않고 잠시후에 신청하도록 유도한다. `Circuit breaker`, `fallback`
-    - 성능
-        4. 고객은 회의실 현황을 언제든지 확인할 수 있어야 한다. `CQRS`
-        5. 신청 상태가 생성/취소되면 알림을 줄 수 있어야 한다. `Event driven`
+        > `Sync 호출`
+        1. 백신이 할당되지 않으면 병원에 등록되지 않는다. 
 
+    - 장애격리
+        > `Async (event-driven)` / `Eventual Consistency`
+        2. 백신 관리 기능이 수행되지 않더라도 신청은 365일 24시간 가능해야한다. 
+        > `Circuit Breaker` / `Fallback`
+        3. 백신 예약이 많아 백신 할당이 급증하여 장애가 발생하면 병원에 등록되는 것은 잠시 뒤에 처리되도록 한다 
+
+    - 성능
+        > `CQRS`
+        4. 고객은 백신예약 현황을 언제든지 확인할 수 있어야한다 . 
+        > `Event Driven`
+        5. 예약상태가 변경되면 알림을 줄 수 있어야한다
 
 ### 완성된 모델
-![image](https://user-images.githubusercontent.com/81279673/120965022-3520c680-c79f-11eb-9f13-dc80b8872f3f.png)
+![image](https://user-images.githubusercontent.com/47212652/123186913-1e36df80-d4d4-11eb-955b-b0f20f938996.png)
 
+    - 이후 이벤트, 어그리게잇 별로 변수 일부 추가됨
     - 수정된 모델은 모든 요구사항을 커버함.
 
 ## 헥사고날 아키텍처 다이어그램 도출
 - 외부에서 들어오는 요청을 인바운드 포트를 호출해서 처리하는 인바운드 어댑터와 비즈니스 로직에서 들어온 요청을 회부 서비스를 호출해서 처리하는 아웃바운드 어댑터로 분리
 - 호출관계에서 Pub/Sub 과 Req/Resp 를 구분함
 - 서브 도메인과 바운디드 컨텍스트의 분리: 각 팀의 KPI 별로 아래와 같이 관심 구현 스토리를 나눠가짐
-- 회의(Conference)의 경우 Polyglot 적용을 위해 Hsql로 설계
+- 예약(Reservation)의 경우 Polyglot 적용을 위해 Hsqldb로 설계
 
-<img width="1200" alt="헥사고날 최종" src="https://user-images.githubusercontent.com/80210609/120962597-00ab0b80-c79b-11eb-9917-7c271b2a2434.PNG">
+![image](https://user-images.githubusercontent.com/47212652/123188263-b209ab00-d4d6-11eb-987e-6da0e887c208.png)
 
 
 # 구현:
