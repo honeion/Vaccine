@@ -49,7 +49,7 @@ public class Vaccine {
     @PostUpdate
     public void onPostUpdate(){
         try {
-            Thread.currentThread().sleep((long) (600 + Math.random() * 100));
+            Thread.currentThread().sleep((long) (800 + Math.random() * 200));
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
