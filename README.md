@@ -996,18 +996,46 @@ public interface HospitalService {
 - 정상적으로 작동함을 확인하였음
 
 ## Zero-downtime deploy (Readiness Probe)
-- Room 서비스에 kubectl apply -f deployment_non_readiness.yml 을 통해 readiness Probe 옵션을 제거하고 컨테이너 상태 실시간 확인
-![non_de](https://user-images.githubusercontent.com/47212652/121105020-32c17980-c83e-11eb-8e10-c27ee89a369d.PNG)
+1. 무정지 재배포가 100% 되는 것임을 확인하기 위해 HPA, CB, readinessProbe 설정 제거
+```
+cd Vaccine/kubernetes
+# readiness probe 옵션없는 yaml으로 배포
+kubectl apply -f deployment_non_readinessProbe.yml
+kubectl apply -f service.yaml
+```
+2. seige로 부하를 걸어둔 상태에서 이미지 버전을 vaccine:0.1에서 vaccine:latest로 배포
+```
+kubectl exec -it pod/siege-d484db9c-lpvmr -c siege -- /bin/bash
+siege -c1 -t120S -r10 -v --content-type "application/json" 'http://20.41.101.82:8080/vaccines POST {"name":"moderna","type":1,"validationDate":"2022-05-31","status":"CANUSE"}'
+kubectl set image deployment vaccine vaccine=skccuser20.azurecr.io/vaccine:0.1
+kubectl get deployments -o wide
+```
+![image](https://user-images.githubusercontent.com/47212652/123357895-65d96c00-d5a5-11eb-8400-a7f9ffdf10b6.png)
+```
+kubectl set image deployment vaccine vaccine=skccuser20.azurecr.io/vaccine:latest
+kubectl get deployments -o wide
+```
+![image](https://user-images.githubusercontent.com/47212652/123357922-7689e200-d5a5-11eb-9d81-93ef4afc547d.png)
 
-- Room 서비스에 kubectl apply -f deployment.yml 을 통해 readiness Probe 옵션 적용
-- readinessProbe 옵션 추가  
-    > initialDelaySeconds: 10  
-    > timeoutSeconds: 2  
-    > periodSeconds: 5  
-    > failureThreshold: 10  
+- 부하 걸린 상태에서 배포  
+  가용률이 매우 떨어짐을 확인 (무정지 배포 x)
+![image](https://user-images.githubusercontent.com/47212652/123357939-830e3a80-d5a5-11eb-9b80-373eeea1a751.png)
 
-- 컨테이너 상태 실시간 확인
-![dep](https://user-images.githubusercontent.com/47212652/121105025-33f2a680-c83e-11eb-9db0-ee2206a966fe.PNG)
+3. 무정지 배포를 위한 Readiness Probe 옵션 적용한 상태로 재시도
+```yaml  
+# kubectl apply -f deployment.yml
+  readinessProbe:
+    httpGet:
+      path: '/actuator/health'
+      port: 8080
+    initialDelaySeconds: 10
+    timeoutSeconds: 2
+    periodSeconds: 5
+    failureThreshold: 10
+```
+- 동일한 방식으로 진행 Seige 결과 Availability가 100%임을 확인
+![image](https://user-images.githubusercontent.com/47212652/123358087-c5377c00-d5a5-11eb-88e1-0f9dbef9470b.png)
+
 
 ## Self-healing (Liveness Probe)
 - Pay 서비스에 kubectl apply -f deployment.yml 을 통해 liveness Probe 옵션 적용
