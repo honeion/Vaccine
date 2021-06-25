@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: vaccine
-          image: skccuser20.azurecr.io/vaccine:latest
+          image: skccuser20.azurecr.io/vaccine:0.1
           ports:
             - containerPort: 8080
           env:
