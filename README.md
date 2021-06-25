@@ -115,8 +115,7 @@
 
 - 도메인 서열 분리 
   1. Core Domain(reservation, vaccine) : 없어서는 안될 핵심 서비스이며, 연견 Up-time SLA 수준을 99.999% 목표, 배포주기는 reservatoin 의 경우 1주일 1회 미만, vaccine 의 경우 1개월 1회 미만
-  2. Supporting Domain(customer center) : 경쟁력을 내기위한 서비스이며, SLA 수준은 연간 60% 이상 uptime 목표, 배포주기는 각 팀의 자율이나 표준 스프린트 주기가 1주일 이므로 1주일 1회 이상을 기준으로 함.
-  3. General Domain(hospital) : 병원 정보와 관련된 서비스로 병원들과 협약을 맺은 3rd Party 외부 서비스를 사용하는 것이 경쟁력이 높음 
+  2. General Domain(hospital) : 병원 정보와 관련된 서비스로 병원들과 협약을 맺은 3rd Party 외부 서비스를 사용하는 것이 경쟁력이 높음 
 
 ### 기능적 요구사항 검증
 ![image](https://user-images.githubusercontent.com/47212652/123187659-889c4f80-d4d5-11eb-8b7b-47ee13d89f7d.png)
