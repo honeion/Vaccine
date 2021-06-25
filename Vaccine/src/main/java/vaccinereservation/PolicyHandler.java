@@ -18,17 +18,13 @@ public class PolicyHandler{
         if(!vaccineReserved.validate()) return;
         System.out.println("\n\n##### listener ReserveVaccine : " + vaccineReserved.toJson() + "\n\n");
 
-        // Sample Logic //
         Vaccine vaccine;
         boolean check = false;
-
-        //여기서 백신 CAN USE인 애 찾고 있으면 업뎃 없으면 예약불가로 만들고 업데이트 되니까 post update에서 처리하면 됨
         
         final Iterable<Vaccine> list = vaccineRepository.findAll();
 
         for(Vaccine v : list){
             if(v.getStatus().equals("CANUSE")){
-                System.out.println("?????????????????");
                 vaccine = v;
                 vaccine.setStatus("ASSIGNED");
                 vaccine.setReservationId(vaccineReserved.getReservationId());
@@ -45,9 +41,6 @@ public class PolicyHandler{
             cantVaccine.setStatus("CANTUSE");
             cantVaccine.setReservationId(vaccineReserved.getReservationId());
             vaccineRepository.save(cantVaccine);
-            System.out.println("######################");
-            System.out.println("백신부족으로 예약불가");
-            System.out.println("######################");
         }
         
             
@@ -58,8 +51,6 @@ public class PolicyHandler{
         if(!canceledVaccineReservation.validate()) return;
 
         System.out.println("\n\n##### listener CancelReservation : " + canceledVaccineReservation.toJson() + "\n\n");
-        // 여기서는 Reseravtion Id, STATUS : CANCELED 가 옴 업데이트를 
-        // Sample Logic //
         Vaccine vaccine = vaccineRepository.findByReservationId(canceledVaccineReservation.getReservationId());
         vaccine.setStatus("CANUSE"); //CANCELD라서 CANUSE로 변경
         vaccine.setReservationStatus("CANCELED"); 
